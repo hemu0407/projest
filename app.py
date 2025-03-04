@@ -18,15 +18,20 @@ companies = {
     "Tesla (TSLA)": "TSLA",
 }
 
-# Store selected stock quantity in session state
+# Store selections in session state to prevent resets
+if "selected_company" not in st.session_state:
+    st.session_state.selected_company = list(companies.keys())[0]
+
 if "stocks_to_buy" not in st.session_state:
-    st.session_state.stocks_to_buy = 10  # Default value
+    st.session_state.stocks_to_buy = 10  # Default stock quantity
 
 st.set_page_config(page_title="Stock Predictor", layout="wide")
 st.title("📈 Stock Predictor - Intraday Analysis")
 
-# Select a Company
-selected_company = st.selectbox("Select a Company", list(companies.keys()))
+# Select a Company (No Auto Reset)
+selected_company = st.selectbox("Select a Company", list(companies.keys()), index=list(companies.keys()).index(st.session_state.selected_company))
+st.session_state.selected_company = selected_company  # Store selection persistently
+
 symbol = companies[selected_company]
 
 # Function to fetch intraday stock data
@@ -61,7 +66,7 @@ if st.button("🔍 Fetch Stock Data"):
         fig = px.line(df, x=df.index, y="Close", title=f"📈 {selected_company} Intraday Trend")
         st.plotly_chart(fig)
 
-        # Ask user how many stocks they want to buy
+        # Stock selection slider (Persistent Value)
         st.session_state.stocks_to_buy = st.slider("Select the number of stocks to buy", 
                                                    min_value=1, max_value=1000, 
                                                    value=st.session_state.stocks_to_buy)

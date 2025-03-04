@@ -166,9 +166,4 @@ elif page == "🔄 Stock Comparison":
 # Rerun the app if needed
 if "rerun" in st.session_state and st.session_state.rerun:
     st.session_state.rerun = False
-    if hasattr(st, "experimental_rerun"):  # Check if st.experimental_rerun is available
-        st.experimental_rerun()
-    elif hasattr(st, "rerun"):  # Check if st.rerun is available
-        st.rerun()
-    else:
-        st.warning("⚠ Rerun functionality is not available in your Streamlit version. Please upgrade Streamlit.")
+    st.experimental_rerun()  # Use st.rerun() if available

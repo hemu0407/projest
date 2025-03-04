@@ -9,7 +9,7 @@ from datetime import datetime, timedelta
 st.set_page_config(page_title="Stock Market App", layout="wide")
 
 # API Key
-API_KEY = "MPPUU3T1XG48JIOK"
+API_KEY = "2FBFACISUP9PL6YT"
 
 # Stock Symbols
 companies = {
@@ -25,16 +25,6 @@ companies = {
     "Intel (INTC)": "INTC"
 }
 
-# Fetch Stock Data Function
-def get_stock_data(symbol):
-    url = f"https://www.alphavantage.co/query?function=TIME_SERIES_INTRADAY&symbol={symbol}&interval=5min&apikey={API_KEY}&outputsize=full"
-    response = requests.get(url)
-    return response.json()
-
-# Initialize session state for alerts
-if "alerts" not in st.session_state:
-    st.session_state.alerts = []
-
 # Sidebar Navigation
 st.sidebar.title("📌 Navigation")
 page = st.sidebar.radio("Go to", ["🏠 Home", "📊 Stock Market Dashboard", "🚨 Price Alert", "🔄 Stock Comparison"])
@@ -42,6 +32,12 @@ page = st.sidebar.radio("Go to", ["🏠 Home", "📊 Stock Market Dashboard", "�
 # Home Page
 if page == "🏠 Home":
     st.image("https://source.unsplash.com/featured/?stocks,market", use_column_width=True)
+
+# Fetch Stock Data Function
+def get_stock_data(symbol):
+    url = f"https://www.alphavantage.co/query?function=TIME_SERIES_INTRADAY&symbol={symbol}&interval=5min&apikey={API_KEY}&outputsize=full"
+    response = requests.get(url)
+    return response.json()
 
 # Stock Market Dashboard
 if page == "📊 Stock Market Dashboard":

@@ -42,74 +42,76 @@ if st.button("🔍 Fetch Stock Data"):
         df = df.sort_index()
         df.columns = ["Open", "High", "Low", "Close", "Volume"]
 
-        # Display Current Price
-        current_price = df.iloc[-1]["Close"]
-        highest_price = df["High"].max()
-        opening_price = df.iloc[0]["Open"]
+        # Store data in session state (so it doesn't reset when user inputs number of stocks)
+        st.session_state["stock_df"] = df
+        st.session_state["current_price"] = df.iloc[-1]["Close"]
+        st.session_state["highest_price"] = df["High"].max()
+        st.session_state["opening_price"] = df.iloc[0]["Open"]
 
+        # Display Current Stock Data
         col1, col2, col3 = st.columns(3)
-        col1.metric(label="📌 Current Price", value=f"${current_price:.2f}")
-        col2.metric(label="📈 Highest Price Today", value=f"${highest_price:.2f}")
-        col3.metric(label="🏁 Opening Price", value=f"${opening_price:.2f}")
+        col1.metric(label="📌 Current Price", value=f"${st.session_state['current_price']:.2f}")
+        col2.metric(label="📈 Highest Price Today", value=f"${st.session_state['highest_price']:.2f}")
+        col3.metric(label="🏁 Opening Price", value=f"${st.session_state['opening_price']:.2f}")
 
         # Display Intraday Graph
         st.subheader("📊 Intraday Stock Price Trend")
         fig = px.line(df, x=df.index, y="Close", title=f"📈 {selected_company} Intraday Trend")
         st.plotly_chart(fig)
 
-        # User enters number of stocks (No default value)
-        stocks_to_buy = st.number_input("Enter the number of stocks to buy:", min_value=1, max_value=1000, step=1, format="%d", value=None)
+# Ensure stock data is loaded before showing the stock input field
+if "stock_df" in st.session_state:
+    # User enters number of stocks (No default value)
+    stocks_to_buy = st.number_input("Enter the number of stocks to buy:", min_value=1, max_value=1000, step=1, format="%d", value=None, key="stock_input")
 
-        # Button to confirm investment calculation
-        if stocks_to_buy is not None and st.button("📊 Get Results"):
-            # Calculate Total Investment
-            total_investment = stocks_to_buy * current_price
-            st.info(f"💰 **Total Investment: ${total_investment:.2f}**")
+    # Button to confirm investment calculation
+    if stocks_to_buy is not None and st.button("📊 Get Results"):
+        current_price = st.session_state["current_price"]
+        total_investment = stocks_to_buy * current_price
+        st.info(f"💰 **Total Investment: ${total_investment:.2f}**")
 
-            # Prepare Data for Machine Learning Model (SVM)
-            df["Minutes"] = np.arange(len(df))
-            X = df["Minutes"].values.reshape(-1, 1)
-            y = df["Close"].values.reshape(-1, 1)
+        # Prepare Data for Machine Learning Model (SVM)
+        df = st.session_state["stock_df"]
+        df["Minutes"] = np.arange(len(df))
+        X = df["Minutes"].values.reshape(-1, 1)
+        y = df["Close"].values.reshape(-1, 1)
 
-            # Train Model with SVM
-            X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, shuffle=False)
-            model = SVR(kernel="rbf", C=1000, gamma=0.1)
-            model.fit(X_train, y_train.ravel())
+        # Train Model with SVM
+        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, shuffle=False)
+        model = SVR(kernel="rbf", C=1000, gamma=0.1)
+        model.fit(X_train, y_train.ravel())
 
-            # Predict Future Stock Prices
-            future_minutes = np.array(range(df["Minutes"].max() + 1, df["Minutes"].max() + 10)).reshape(-1, 1)
-            predicted_prices = model.predict(future_minutes)
+        # Predict Future Stock Prices
+        future_minutes = np.array(range(df["Minutes"].max() + 1, df["Minutes"].max() + 10)).reshape(-1, 1)
+        predicted_prices = model.predict(future_minutes)
 
-            # Display Predicted Prices
-            st.subheader("📊 Future Stock Price Prediction")
-            future_df = pd.DataFrame({"Minutes": future_minutes.flatten(), "Predicted Price": predicted_prices.flatten()})
-            future_df["Time"] = pd.date_range(start=df.index.max(), periods=len(future_df), freq="15min")
+        # Display Predicted Prices
+        st.subheader("📊 Future Stock Price Prediction")
+        future_df = pd.DataFrame({"Minutes": future_minutes.flatten(), "Predicted Price": predicted_prices.flatten()})
+        future_df["Time"] = pd.date_range(start=df.index.max(), periods=len(future_df), freq="15min")
 
-            fig_pred = px.line(future_df, x="Time", y="Predicted Price", title=f"📈 Predicted Stock Prices for {selected_company}")
-            st.plotly_chart(fig_pred)
+        fig_pred = px.line(future_df, x="Time", y="Predicted Price", title=f"📈 Predicted Stock Prices for {selected_company}")
+        st.plotly_chart(fig_pred)
 
-            # Calculate Profit and Loss
-            predicted_high = max(predicted_prices)  # Maximum predicted price
-            predicted_low = min(predicted_prices)   # Minimum predicted price
+        # Calculate Profit and Loss
+        predicted_high = max(predicted_prices)  # Maximum predicted price
+        predicted_low = min(predicted_prices)   # Minimum predicted price
 
-            profit_per_stock = predicted_high - current_price
-            loss_per_stock = predicted_low - current_price
+        profit_per_stock = predicted_high - current_price
+        loss_per_stock = predicted_low - current_price
 
-            total_profit = profit_per_stock * stocks_to_buy
-            total_loss = loss_per_stock * stocks_to_buy
+        total_profit = profit_per_stock * stocks_to_buy
+        total_loss = loss_per_stock * stocks_to_buy
 
-            profit_percentage = (profit_per_stock / current_price) * 100
-            loss_percentage = abs((loss_per_stock / current_price) * 100)
+        profit_percentage = (profit_per_stock / current_price) * 100
+        loss_percentage = abs((loss_per_stock / current_price) * 100)
 
-            # Display Profit or Loss
-            if total_profit > 0:
-                st.success(f"✅ **Potential Profit: ${total_profit:.2f} ({profit_percentage:.2f}%)** if stock reaches predicted high of ${predicted_high:.2f}")
-                best_sell_time = future_df.loc[future_df["Predicted Price"].idxmax(), "Time"]
-                st.write(f"🕒 **Best Time to Sell:** {best_sell_time.strftime('%H:%M %p')}")
+        # Display Profit or Loss
+        if total_profit > 0:
+            st.success(f"✅ **Potential Profit: ${total_profit:.2f} ({profit_percentage:.2f}%)** if stock reaches predicted high of ${predicted_high:.2f}")
+            best_sell_time = future_df.loc[future_df["Predicted Price"].idxmax(), "Time"]
+            st.write(f"🕒 **Best Time to Sell:** {best_sell_time.strftime('%H:%M %p')}")
 
-            else:
-                st.error(f"⚠️ **Potential Loss: ${abs(total_loss):.2f} ({loss_percentage:.2f}%)**")
-                st.warning("🚫 **Don't buy. Market trend shows high risk of loss.**")
-
-    else:
-        st.error("⚠️ Could not fetch intraday stock data!")
+        else:
+            st.error(f"⚠️ **Potential Loss: ${abs(total_loss):.2f} ({loss_percentage:.2f}%)**")
+            st.warning("🚫 **Don't buy. Market trend shows high risk of loss.**")

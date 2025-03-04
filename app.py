@@ -3,7 +3,7 @@ import requests
 import pandas as pd
 import plotly.express as px
 import numpy as np
-from sklearn.svm import SVR
+from datetime import datetime, timedelta
 
 # Set Page Configuration
 st.set_page_config(page_title="Stock Market App", layout="wide")
@@ -25,16 +25,6 @@ companies = {
     "Intel (INTC)": "INTC"
 }
 
-# Fetch Stock Data Function
-def get_stock_data(symbol):
-    url = f"https://www.alphavantage.co/query?function=TIME_SERIES_INTRADAY&symbol={symbol}&interval=5min&apikey={API_KEY}&outputsize=full"
-    response = requests.get(url)
-    return response.json()
-
-# Initialize session state for alerts
-if "alerts" not in st.session_state:
-    st.session_state.alerts = []
-
 # Sidebar Navigation
 st.sidebar.title("📌 Navigation")
 page = st.sidebar.radio("Go to", ["🏠 Home", "📊 Stock Market Dashboard", "🚨 Price Alert", "🔄 Stock Comparison"])
@@ -42,6 +32,12 @@ page = st.sidebar.radio("Go to", ["🏠 Home", "📊 Stock Market Dashboard", "�
 # Home Page
 if page == "🏠 Home":
     st.image("https://source.unsplash.com/featured/?stocks,market", use_column_width=True)
+
+# Fetch Stock Data Function
+def get_stock_data(symbol):
+    url = f"https://www.alphavantage.co/query?function=TIME_SERIES_INTRADAY&symbol={symbol}&interval=5min&apikey={API_KEY}&outputsize=full"
+    response = requests.get(url)
+    return response.json()
 
 # Stock Market Dashboard
 if page == "📊 Stock Market Dashboard":
@@ -79,86 +75,59 @@ if page == "📊 Stock Market Dashboard":
 
         # Investment Calculator
         num_stocks = st.number_input("🛒 Enter number of stocks to buy", min_value=1, step=1)
-        total_cost = num_stocks * current_price
-        st.info(f"💰 *Total Investment:* ${total_cost:.2f}")
 
-        # Future Trend Prediction (SVR)
-        st.subheader("📈 Future Stock Price Prediction")
+        if st.button("📊 Fetch Profit/Loss and Future Prediction"):
+            total_cost = num_stocks * current_price
+            st.info(f"💰 *Total Investment:* ${total_cost:.2f}")
 
-        df["Time"] = np.arange(len(df))
-        X = df[["Time"]].values
-        y = df["Close"].values
+            # **📈 Future Trend Prediction (Moving Averages)**
+            st.subheader("📈 Future Stock Price Prediction (Moving Averages)")
 
-        model = SVR(kernel="rbf", C=1e3, gamma=0.1)
-        model.fit(X, y)
+            # Filter data for the current day
+            today = datetime.now().date()
+            df_today = df[df.index.date == today]
 
-        future_times = np.arange(len(df) + 10).reshape(-1, 1)
-        future_prices = model.predict(future_times)
+            # Check if the market is open
+            if df_today.empty:
+                st.warning("⚠ Market is closed. No predictions available for today.")
+            else:
+                # Calculate moving average
+                window_size = 10  # Adjust window size as needed
+                df_today["Moving Avg"] = df_today["Close"].rolling(window=window_size).mean()
 
-        future_df = pd.DataFrame({"Time": future_times.flatten(), "Predicted Price": future_prices})
-        fig_pred = px.line(future_df, x="Time", y="Predicted Price", title="📈 Predicted Stock Prices (Next 10 Ticks)", template="plotly_dark")
-        st.plotly_chart(fig_pred)
+                # Predict future prices using moving average
+                future_prices = df_today["Moving Avg"].iloc[-window_size:].values
+                future_times = pd.date_range(start=df_today.index[-1], periods=window_size + 1, freq="5T")[1:]
 
-        # Calculate Profit/Loss
-        future_price = future_prices[-1]
-        future_value = num_stocks * future_price
-        profit_loss = future_value - total_cost
-        profit_loss_percentage = (profit_loss / total_cost) * 100
+                # Create future DataFrame
+                future_df = pd.DataFrame({"Time": future_times, "Predicted Price": future_prices})
 
-        if profit_loss > 0:
-            st.success(f"📈 *Profit:* ${profit_loss:.2f} ({profit_loss_percentage:.2f}%)")
-            st.info(f"💡 *Recommendation:* Consider selling when the price reaches ${future_price:.2f} to maximize profit.")
-        else:
-            st.error(f"📉 *Loss:* ${abs(profit_loss):.2f} ({abs(profit_loss_percentage):.2f}%)")
-            st.warning(f"💡 *Recommendation:* It might not be the best time to buy. Consider waiting for a better price.")
+                # Plot the predicted prices
+                fig_pred = px.line(future_df, x="Time", y="Predicted Price", title="📈 Predicted Stock Prices (Next 10 Intervals)", template="plotly_dark")
+                st.plotly_chart(fig_pred)
+
+                # Calculate Profit/Loss
+                future_price = future_prices[-1]
+                future_value = num_stocks * future_price
+                profit_loss = future_value - total_cost
+                profit_loss_percentage = (profit_loss / total_cost) * 100
+
+                if profit_loss > 0:
+                    st.success(f"📈 *Profit:* ${profit_loss:.2f} ({profit_loss_percentage:.2f}%)")
+                    st.info(f"💡 *Recommendation:* Consider selling when the price reaches ${future_price:.2f} to maximize profit.")
+                else:
+                    st.error(f"📉 *Loss:* ${abs(profit_loss):.2f} ({abs(profit_loss_percentage):.2f}%)")
+                    st.warning(f"💡 *Recommendation:* It might not be the best time to buy. Consider waiting for a better price.")
 
 # Price Alert
 elif page == "🚨 Price Alert":
-    st.title("🚨 Price Alert")
-
-    # Set Alert
-    st.subheader("🔔 Set Price Alert")
+    st.title("🚨 Set Price Alert")
+    
     selected_company = st.selectbox("📌 Choose a Company for Alerts", list(companies.keys()))
-    alert_price = st.number_input("💰 Enter Alert Price", min_value=0.0, format="%.2f")
+    alert_price = st.number_input("🔔 Enter Alert Price", min_value=0.0, format="%.2f")
     
     if st.button("✅ Set Alert"):
-        # Add alert to session state
-        st.session_state.alerts.append({
-            "company": selected_company,
-            "symbol": companies[selected_company],
-            "alert_price": alert_price
-        })
         st.success(f"🚀 Alert set for {selected_company} at ${alert_price:.2f}")
-
-    # Display Active Alerts
-    st.subheader("📋 Active Alerts")
-    if st.session_state.alerts:
-        for i, alert in enumerate(st.session_state.alerts):
-            st.write(f"{i + 1}. {alert['company']} - Alert at ${alert['alert_price']:.2f}")
-            if st.button(f"❌ Clear Alert {i + 1}"):
-                st.session_state.alerts.pop(i)
-                st.session_state.rerun = True  # Trigger rerun
-    else:
-        st.info("No active alerts.")
-
-    # Check Alerts
-    st.subheader("🔍 Check Alerts")
-    if st.button("🔔 Check Alerts Now"):
-        for alert in st.session_state.alerts:
-            stock_data = get_stock_data(alert["symbol"])
-            if "Time Series (5min)" in stock_data:
-                df = pd.DataFrame.from_dict(stock_data["Time Series (5min)"], orient="index").astype(float)
-                if "Close" in df.columns:
-                    current_price = df["Close"].iloc[-1]
-
-                    if current_price >= alert["alert_price"]:
-                        st.success(f"🚨 Alert triggered for {alert['company']}! Current price: ${current_price:.2f} (Target: ${alert['alert_price']:.2f})")
-                    else:
-                        st.info(f"⏳ {alert['company']} is at ${current_price:.2f}. Waiting to reach ${alert['alert_price']:.2f}.")
-                else:
-                    st.warning(f"⚠ The 'Close' column is missing in the data for {alert['company']}.")
-            else:
-                st.warning(f"⚠ Could not fetch data for {alert['company']}.")
 
 # Stock Comparison
 elif page == "🔄 Stock Comparison":
@@ -191,13 +160,3 @@ elif page == "🔄 Stock Comparison":
             st.plotly_chart(fig_compare)
         else:
             st.warning("⚠ Unable to fetch stock data for comparison.")
-
-# Rerun the app if needed
-if "rerun" in st.session_state and st.session_state.rerun:
-    st.session_state.rerun = False
-    if hasattr(st, "experimental_rerun"):  # Check if st.experimental_rerun is available
-        st.experimental_rerun()
-    elif hasattr(st, "rerun"):  # Check if st.rerun is available
-        st.rerun()
-    else:
-        st.warning("⚠ Rerun functionality is not available in your Streamlit version. Please upgrade Streamlit.")

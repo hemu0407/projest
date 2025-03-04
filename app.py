@@ -6,7 +6,7 @@ import plotly.express as px
 from sklearn.svm import SVR
 from sklearn.model_selection import train_test_split
 
-# Alpha Vantage API Key (Replace with your own)
+# Alpha Vantage API Key
 API_KEY = "EY0BHX91K5UY3W6Q"
 
 # List of stock symbols for intraday trading
@@ -20,7 +20,6 @@ companies = {
 
 # Streamlit UI
 st.set_page_config(page_title="Stock Predictor", layout="wide")
-
 st.title("📈 Stock Predictor - Intraday Analysis")
 
 # Select a Company
@@ -31,12 +30,10 @@ symbol = companies[selected_company]
 def get_intraday_data(symbol):
     url = f"https://www.alphavantage.co/query?function=TIME_SERIES_INTRADAY&symbol={symbol}&interval=15min&apikey={API_KEY}&outputsize=full"
     response = requests.get(url)
-    data = response.json()
-    return data
+    return response.json()
 
 # Fetch Data Button
 if st.button("🔍 Fetch Stock Data"):
-    # Fetch intraday data
     stock_data = get_intraday_data(symbol)
 
     if "Time Series (15min)" in stock_data:
@@ -69,7 +66,7 @@ if st.button("🔍 Fetch Stock Data"):
         st.info(f"💰 **Total Investment: ${total_investment:.2f}**")
 
         # Prepare Data for Machine Learning Model (SVM)
-        df["Minutes"] = np.arange(len(df))  # Convert timestamps to numerical values
+        df["Minutes"] = np.arange(len(df))
         X = df["Minutes"].values.reshape(-1, 1)
         y = df["Close"].values.reshape(-1, 1)
 
@@ -103,17 +100,15 @@ if st.button("🔍 Fetch Stock Data"):
         profit_percentage = (profit_per_stock / current_price) * 100
         loss_percentage = abs((loss_per_stock / current_price) * 100)
 
-        # Profit or Loss Analysis
+        # Display only Profit OR Loss (not both)
         if total_profit > 0:
             st.success(f"✅ **Potential Profit: ${total_profit:.2f} ({profit_percentage:.2f}%)** if stock reaches predicted high of ${predicted_high:.2f}")
             best_sell_time = future_df.loc[future_df["Predicted Price"].idxmax(), "Time"]
             st.write(f"🕒 **Best Time to Sell (Expected High):** {best_sell_time.strftime('%H:%M %p')}")
-        else:
-            st.info("⚖️ **Neutral trend detected. No significant profit expected.**")
 
-        if total_loss < 0:
+        elif total_loss < 0:
             st.error(f"⚠️ **Potential Loss: ${abs(total_loss):.2f} ({loss_percentage:.2f}%)** if stock drops to predicted low of ${predicted_low:.2f}")
-EY0BHX91K5UY3W6Q
+
         # Final Recommendation
         if profit_percentage > loss_percentage:
             st.success("📈 **Recommended: Buy Now. Market trend shows a potential uptrend.**")
@@ -122,4 +117,3 @@ EY0BHX91K5UY3W6Q
 
     else:
         st.error("⚠️ Could not fetch intraday stock data!")
-EY0BHX91K5UY3W6Q

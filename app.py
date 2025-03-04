@@ -36,7 +36,6 @@ if "alerts" not in st.session_state:
     st.session_state.alerts = []
 
 # Sidebar Navigation
-# Sidebar Navigation
 st.sidebar.title("📌 Navigation")
 st.sidebar.markdown("---")  # Adds a horizontal line for separation
 
@@ -76,8 +75,6 @@ st.sidebar.info("""
 **Date:** 2023-10-01  
 **Version:** 1.0.0
 """)
-st.sidebar.title("📌 Navigation")
-page = st.sidebar.radio("Go to", ["🏠 Home", "📊 Stock Market Dashboard", "🚨 Price Alert", "🔄 Stock Comparison"])
 
 # Home Page
 if page == "🏠 Home":

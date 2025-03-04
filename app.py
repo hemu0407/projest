@@ -18,17 +18,11 @@ companies = {
     "Tesla (TSLA)": "TSLA",
 }
 
-# Store user selections persistently
-if "selected_company" not in st.session_state:
-    st.session_state.selected_company = list(companies.keys())[0]
-
 st.set_page_config(page_title="Stock Predictor", layout="wide")
 st.title("📈 Stock Predictor - Intraday Analysis")
 
 # Select a Company
-selected_company = st.selectbox("Select a Company", list(companies.keys()), index=list(companies.keys()).index(st.session_state.selected_company))
-st.session_state.selected_company = selected_company
-
+selected_company = st.selectbox("Select a Company", list(companies.keys()))
 symbol = companies[selected_company]
 
 # Function to fetch intraday stock data
@@ -63,11 +57,11 @@ if st.button("🔍 Fetch Stock Data"):
         fig = px.line(df, x=df.index, y="Close", title=f"📈 {selected_company} Intraday Trend")
         st.plotly_chart(fig)
 
-        # User enters number of stocks
-        stocks_to_buy = st.number_input("Enter the number of stocks to buy:", min_value=1, max_value=1000, step=1, format="%d")
+        # User enters number of stocks (No default value)
+        stocks_to_buy = st.number_input("Enter the number of stocks to buy:", min_value=1, max_value=1000, step=1, format="%d", value=None)
 
-        # Calculate only if input is valid
-        if stocks_to_buy > 0:
+        # Button to confirm investment calculation
+        if stocks_to_buy is not None and st.button("📊 Get Results"):
             # Calculate Total Investment
             total_investment = stocks_to_buy * current_price
             st.info(f"💰 **Total Investment: ${total_investment:.2f}**")

@@ -22,24 +22,16 @@ companies = {
     "Intel (INTC)": "INTC"
 }
 
-# Streamlit UI
-st.set_page_config(page_title="Stock Market Dashboard", layout="wide")
+# Streamlit UI Configuration
+st.set_page_config(page_title="Stock Market App", layout="wide")
 
-# Initialize session state for storing stock data and theme mode
-if "stock_data" not in st.session_state:
-    st.session_state.stock_data = None
-if "dark_mode" not in st.session_state:
-    st.session_state.dark_mode = True  # Default theme
+# Sidebar Navigation
+st.sidebar.title("📌 Navigation")
+page = st.sidebar.radio("Go to", ["🏠 Home", "📊 Stock Market Dashboard", "🚨 Price Alert", "🔄 Stock Comparison"])
 
-# Theme Toggle
-dark_mode = st.toggle("\U0001F317 Toggle Dark/Light Mode", value=st.session_state.dark_mode)
-st.session_state.dark_mode = dark_mode
-plot_theme = "plotly_dark" if st.session_state.dark_mode else "plotly_white"
-
-# Company selection
-st.title("\U0001F4CA Stock Market Dashboard")
-st.markdown("---")
-selected_company = st.selectbox("\U0001F4CC Select a Company", list(companies.keys()))
+# Home Page
+if page == "🏠 Home":
+    st.image("https://source.unsplash.com/featured/?stocks,market", use_column_width=True)
 
 # Function to fetch stock data
 def get_stock_data(symbol):
@@ -48,60 +40,64 @@ def get_stock_data(symbol):
     data = response.json()
     return data
 
-# Fetch data button
-if st.button("\U0001F50D Fetch Stock Data"):
-    stock_data = get_stock_data(companies[selected_company])
-    if "Time Series (5min)" in stock_data:
-        df = pd.DataFrame.from_dict(stock_data["Time Series (5min)"], orient="index")
-        df = df.astype(float)
-        df.index = pd.to_datetime(df.index)
-        df = df.sort_index()
-        df.columns = ["Open", "High", "Low", "Close", "Volume"]
-        st.session_state.stock_data = df  # Store in session state
-    else:
-        st.warning(f"⚠ Could not fetch data for {selected_company}. API limit may have been reached!")
+# Stock Market Dashboard
+if page == "📊 Stock Market Dashboard":
+    st.title("📊 Stock Market Dashboard")
+    
+    selected_company = st.selectbox("📌 Select a Company", list(companies.keys()))
+    num_stocks = st.number_input("🛒 Enter number of stocks to buy", min_value=1, step=1)
 
-# Display stock data if available
-if st.session_state.stock_data is not None:
-    df = st.session_state.stock_data
-    current_price = df["Close"].iloc[-1]
-    
-    st.subheader(f"📈 {selected_company} Stock Details")
-    st.info(f"💰 *Current Price:* ${current_price:.2f}")
+    if st.button("🔍 Fetch Stock Data"):
+        stock_data = get_stock_data(companies[selected_company])
 
-    # Stock Price Alert
-    st.subheader("\U0001F514 Stock Price Alert")
-    price_threshold = st.number_input("Set Price Alert", min_value=0.0, value=current_price, step=0.1)
-    if current_price >= price_threshold:
-        st.success(f"\U0001F680 Alert! {selected_company} has reached ${price_threshold}!")
+        if "Time Series (5min)" in stock_data:
+            df = pd.DataFrame.from_dict(stock_data["Time Series (5min)"], orient="index")
+            df = df.astype(float)
+            df.index = pd.to_datetime(df.index)
+            df = df.sort_index()
+            df.columns = ["Open", "High", "Low", "Close", "Volume"]
+
+            current_price = df["Close"].iloc[-1]
+            total_investment = num_stocks * current_price
+
+            st.success(f"💰 Current Price: ${current_price:.2f}")
+            st.info(f"📊 Total Investment: ${total_investment:.2f}")
+
+            fig = px.line(df, x=df.index, y="Close", title="📊 Intraday Stock Prices")
+            st.plotly_chart(fig)
+
+# Stock Price Alert
+elif page == "🚨 Price Alert":
+    st.title("🚨 Set a Stock Price Alert")
     
-    # Stock Comparison Tool
-    st.subheader("🔄 Compare Stocks")
-    compare_company = st.selectbox("Select another company to compare", [c for c in companies.keys() if c != selected_company])
-    
-    compare_data = get_stock_data(companies[compare_company])
-    if "Time Series (5min)" in compare_data:
-        df_compare = pd.DataFrame.from_dict(compare_data["Time Series (5min)"], orient="index")
-        df_compare = df_compare.astype(float)
-        df_compare.index = pd.to_datetime(df_compare.index)
-        df_compare = df_compare.sort_index()
-        df_compare.columns = ["Open", "High", "Low", "Close", "Volume"]
-        
-        df_combined = pd.DataFrame({
-            f"{selected_company} Close": df["Close"],
-            f"{compare_company} Close": df_compare["Close"]
-        }).dropna()
-        
-        fig_compare = px.line(df_combined, x=df_combined.index, y=df_combined.columns,
-                              title=f"📊 {selected_company} vs {compare_company}", template=plot_theme)
-        st.plotly_chart(fig_compare)
-    
-    # News Feed
-    st.subheader("📰 Latest News")
-    news_url = f"https://newsapi.org/v2/everything?q={companies[selected_company]}&apiKey=YOUR_NEWS_API_KEY"
-    news_response = requests.get(news_url).json()
-    
-    if "articles" in news_response:
-        for article in news_response["articles"][:5]:
-            st.markdown(f"**[{article['title']}]({article['url']})**")
-            st.write(article["description"])
+    alert_company = st.selectbox("Select a Company", list(companies.keys()), key="alert_company")
+    alert_price = st.number_input("Enter Alert Price", min_value=0.0, step=0.1, format="%.2f")
+
+    if st.button("Set Alert"):
+        st.success(f"✅ Alert set for {alert_company} at ${alert_price:.2f}")
+
+# Stock Comparison
+elif page == "🔄 Stock Comparison":
+    st.title("🔄 Compare Two Stocks")
+
+    stock1 = st.selectbox("Select First Stock", list(companies.keys()), key="stock1")
+    stock2 = st.selectbox("Select Second Stock", list(companies.keys()), key="stock2")
+
+    if st.button("Compare Stocks"):
+        data1 = get_stock_data(companies[stock1])
+        data2 = get_stock_data(companies[stock2])
+
+        if "Time Series (5min)" in data1 and "Time Series (5min)" in data2:
+            df1 = pd.DataFrame.from_dict(data1["Time Series (5min)"], orient="index").astype(float)
+            df2 = pd.DataFrame.from_dict(data2["Time Series (5min)"], orient="index").astype(float)
+
+            df1.index = pd.to_datetime(df1.index)
+            df2.index = pd.to_datetime(df2.index)
+
+            df1.columns = ["Open", "High", "Low", "Close", "Volume"]
+            df2.columns = ["Open", "High", "Low", "Close", "Volume"]
+
+            fig = px.line(title="Stock Price Comparison")
+            fig.add_scatter(x=df1.index, y=df1["Close"], mode="lines", name=stock1)
+            fig.add_scatter(x=df2.index, y=df2["Close"], mode="lines", name=stock2)
+            st.plotly_chart(fig)

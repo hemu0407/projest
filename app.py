@@ -2,10 +2,9 @@ import streamlit as st
 import requests
 import pandas as pd
 import plotly.express as px
-import numpy as np
 
 # Alpha Vantage API Key
-API_KEY = "QVQRLHHR3IS7BLSS"
+API_KEY = "YOUR_ALPHA_VANTAGE_API_KEY"
 
 # List of companies and their stock symbols
 companies = {
@@ -24,10 +23,10 @@ companies = {
 # Streamlit UI
 st.title("📈 Stock Market Prediction & Analysis")
 
-# Dropdown for company selection
-selected_company = st.selectbox("Select a Company", list(companies.keys()))
+# Multi-select dropdown for multiple company selection
+selected_companies = st.multiselect("Select Companies", list(companies.keys()), default=["Apple (AAPL)", "Microsoft (MSFT)"])
 
-# Fetch stock data function
+# Function to fetch stock data
 def get_stock_data(symbol):
     url = f"https://www.alphavantage.co/query?function=TIME_SERIES_INTRADAY&symbol={symbol}&interval=5min&apikey={API_KEY}&outputsize=full"
     response = requests.get(url)
@@ -36,56 +35,44 @@ def get_stock_data(symbol):
 
 # Button to fetch data
 if st.button("Fetch Stock Data"):
-    symbol = companies[selected_company]
-    stock_data = get_stock_data(symbol)
+    all_stock_data = {}  # Dictionary to store data for multiple companies
 
-    if "Time Series (5min)" in stock_data:
-        df = pd.DataFrame.from_dict(stock_data["Time Series (5min)"], orient="index")
-        df = df.astype(float)  # Convert values to float
-        df.index = pd.to_datetime(df.index)  # Convert index to datetime
-        df = df.sort_index()  # Sort the data
+    for company in selected_companies:
+        symbol = companies[company]
+        stock_data = get_stock_data(symbol)
 
-        # Rename columns
-        df.columns = ["Open", "High", "Low", "Close", "Volume"]
+        if "Time Series (5min)" in stock_data:
+            df = pd.DataFrame.from_dict(stock_data["Time Series (5min)"], orient="index")
+            df = df.astype(float)  # Convert values to float
+            df.index = pd.to_datetime(df.index)  # Convert index to datetime
+            df = df.sort_index()  # Sort the data
+            df.columns = ["Open", "High", "Low", "Close", "Volume"]
+            df["Company"] = company  # Add a company column
+            all_stock_data[company] = df  # Store in dictionary
 
-        # Extract key values
-        starting_price = df.iloc[0]["Open"]
-        current_price = df.iloc[-1]["Close"]
-        highest_price = df["High"].max()
+        else:
+            st.error(f"⚠️ Could not fetch data for {company}. API limit may have been reached!")
 
-        # Display key prices
-        st.metric(label="📌 Starting Price", value=f"${starting_price:.2f}")
-        st.metric(label="📌 Current Price", value=f"${current_price:.2f}")
-        st.metric(label="📌 Highest Price", value=f"${highest_price:.2f}")
+    # If data is available, proceed with visualization
+    if all_stock_data:
+        combined_df = pd.concat(all_stock_data.values())  # Merge all company data
 
         # Moving Average for Trend Prediction
-        df["SMA_10"] = df["Close"].rolling(window=10).mean()  # 10-period Simple Moving Average
+        for company, df in all_stock_data.items():
+            df["SMA_10"] = df["Close"].rolling(window=10).mean()  # 10-period Simple Moving Average
 
-        # Plot stock trend
-        fig = px.line(df, x=df.index, y=["Close", "SMA_10"], title=f"{selected_company} Stock Trends",
-                      labels={"value": "Stock Price", "index": "Date"},
+        # Line Chart with Multiple Companies
+        fig = px.line(combined_df, x=combined_df.index, y="Close", color="Company", 
+                      title="Stock Trends Comparison", labels={"Close": "Stock Price", "index": "Date"},
                       template="plotly_dark")
+
         st.plotly_chart(fig)
 
-        # Calculate Buy/Sell percentages based on trend
-        recent_trend = df["SMA_10"].pct_change().dropna()
-        buy_percentage = max(0, round(recent_trend.iloc[-1] * 100, 2))
-        sell_percentage = max(0, round(100 - buy_percentage, 2))  # Ensure total is 100%
+        # Simple Investment Advice for Each Company
+        for company, df in all_stock_data.items():
+            st.subheader(f"📊 {company} - Investment Advice")
+            if df["SMA_10"].iloc[-1] > df["SMA_10"].iloc[-2]:  
+                st.success(f"📈 **{company}** is trending **upward**. Might be a good time to invest!")
+            else:
+                st.warning(f"📉 **{company}** is trending **downward**. Consider waiting.")
 
-        # Display Buy/Sell buttons
-        col1, col2 = st.columns(2)
-        with col1:
-            st.markdown(f'<button style="background-color:green; color:white; width:100%; padding:10px; font-size:16px; border:none; border-radius:5px;">'
-                        f'Buy {buy_percentage}%</button>', unsafe_allow_html=True)
-        with col2:
-            st.markdown(f'<button style="background-color:red; color:white; width:100%; padding:10px; font-size:16px; border:none; border-radius:5px;">'
-                        f'Sell {sell_percentage}%</button>', unsafe_allow_html=True)
-
-        # Simple Investment Advice
-        if df["SMA_10"].iloc[-1] > df["SMA_10"].iloc[-2]:  # If SMA is rising
-            st.success("📊 The trend is **upward** 📈. It **might be a good time to invest**!")
-        else:
-            st.warning("📉 The trend is **downward**. Consider waiting before investing.")
-
-    else:
-        st.error("⚠️ Could not fetch stock data. API limit may have been reached!")

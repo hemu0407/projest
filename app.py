@@ -2,6 +2,8 @@ import streamlit as st
 import requests
 import pandas as pd
 import plotly.express as px
+import numpy as np
+from sklearn.svm import SVR
 
 # Set Page Configuration
 st.set_page_config(page_title="Stock Market App", layout="wide")
@@ -74,6 +76,41 @@ if page == "📊 Stock Market Dashboard":
         # Intraday Graph
         fig = px.line(df, x=df.index, y="Close", title="📊 Intraday Stock Prices", labels={"Close": "Stock Price"}, template="plotly_dark")
         st.plotly_chart(fig)
+
+        # Investment Calculator
+        num_stocks = st.number_input("🛒 Enter number of stocks to buy", min_value=1, step=1)
+        total_cost = num_stocks * current_price
+        st.info(f"💰 *Total Investment:* ${total_cost:.2f}")
+
+        # Future Trend Prediction (SVR)
+        st.subheader("📈 Future Stock Price Prediction")
+
+        df["Time"] = np.arange(len(df))
+        X = df[["Time"]].values
+        y = df["Close"].values
+
+        model = SVR(kernel="rbf", C=1e3, gamma=0.1)
+        model.fit(X, y)
+
+        future_times = np.arange(len(df) + 10).reshape(-1, 1)
+        future_prices = model.predict(future_times)
+
+        future_df = pd.DataFrame({"Time": future_times.flatten(), "Predicted Price": future_prices})
+        fig_pred = px.line(future_df, x="Time", y="Predicted Price", title="📈 Predicted Stock Prices (Next 10 Ticks)", template="plotly_dark")
+        st.plotly_chart(fig_pred)
+
+        # Calculate Profit/Loss
+        future_price = future_prices[-1]
+        future_value = num_stocks * future_price
+        profit_loss = future_value - total_cost
+        profit_loss_percentage = (profit_loss / total_cost) * 100
+
+        if profit_loss > 0:
+            st.success(f"📈 *Profit:* ${profit_loss:.2f} ({profit_loss_percentage:.2f}%)")
+            st.info(f"💡 *Recommendation:* Consider selling when the price reaches ${future_price:.2f} to maximize profit.")
+        else:
+            st.error(f"📉 *Loss:* ${abs(profit_loss):.2f} ({abs(profit_loss_percentage):.2f}%)")
+            st.warning(f"💡 *Recommendation:* It might not be the best time to buy. Consider waiting for a better price.")
 
 # Price Alert
 elif page == "🚨 Price Alert":

@@ -6,7 +6,7 @@ from sklearn.svm import SVR
 import numpy as np
 
 # Alpha Vantage API Key
-API_KEY = "CIGY6168CBD8UPYV"
+API_KEY = "3N5V8TAO9YIDT59Q"
 
 # List of companies and their stock symbols
 companies = {

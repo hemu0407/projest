@@ -6,7 +6,7 @@ from sklearn.svm import SVR
 import numpy as np
 
 # Alpha Vantage API Key
-API_KEY = "LZ00UEYC5FP1SZS8"
+API_KEY = "CIGY6168CBD8UPYV"
 
 # List of companies and their stock symbols
 companies = {
@@ -32,6 +32,8 @@ if "dark_mode" not in st.session_state:
     st.session_state.dark_mode = True  # Default theme
 if "alerts" not in st.session_state:
     st.session_state.alerts = {}
+if "num_stocks" not in st.session_state:
+    st.session_state.num_stocks = {}
 
 # Theme Toggle
 dark_mode = st.toggle("🌗 Toggle Dark/Light Mode", value=st.session_state.dark_mode)
@@ -95,6 +97,13 @@ if st.session_state.stock_data is not None:
     st.info(f"💰 **Current Price:** ${current_price:.2f}")
     st.success(f"📈 **Highest Price:** ${highest_price:.2f}")
     st.warning(f"🔽 **Starting Price:** ${starting_price:.2f}")
+
+    # Number of Stocks Bought
+    num_stocks = st.number_input("Enter number of stocks bought:", min_value=0, step=1)
+    if num_stocks > 0:
+        total_investment = num_stocks * current_price
+        st.session_state.num_stocks[selected_company] = num_stocks
+        st.info(f"💵 Total Investment Value: ${total_investment:.2f}")
 
     # Display Intraday Graph
     fig = px.line(df, x=df.index, y="Close", title="📊 Intraday Stock Prices", labels={"Close": "Stock Price"}, template=plot_theme)

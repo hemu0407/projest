@@ -108,7 +108,7 @@ elif page == "🚨 Price Alert":
             st.write(f"{i + 1}. {alert['company']} - Alert at ${alert['alert_price']:.2f}")
             if st.button(f"❌ Clear Alert {i + 1}"):
                 st.session_state.alerts.pop(i)
-                st.experimental_rerun()
+                st.session_state.rerun = True  # Trigger rerun
     else:
         st.info("No active alerts.")
 
@@ -162,3 +162,8 @@ elif page == "🔄 Stock Comparison":
             st.plotly_chart(fig_compare)
         else:
             st.warning("⚠ Unable to fetch stock data for comparison.")
+
+# Rerun the app if needed
+if "rerun" in st.session_state and st.session_state.rerun:
+    st.session_state.rerun = False
+    st.experimental_rerun()  # Use st.rerun() if available

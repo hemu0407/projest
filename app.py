@@ -39,12 +39,50 @@ if "alerts" not in st.session_state:
 st.sidebar.title("📌 Navigation")
 st.sidebar.markdown("---")  # Adds a horizontal line for separation
 
+# Custom CSS for sidebar sections
+st.markdown(
+    """
+    <style>
+    .sidebar-section {
+        padding: 10px;
+        border-radius: 10px;
+        margin: 10px 0;
+        background-color: #2E3440;
+        color: white;
+        font-size: 16px;
+        text-align: center;
+        cursor: pointer;
+        transition: background-color 0.3s;
+    }
+    .sidebar-section:hover {
+        background-color: #4C566A;
+    }
+    .sidebar-section.active {
+        background-color: #5E81AC;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
+
 # Sidebar Sections
-st.sidebar.markdown("### 📊 Dashboard")
-page = st.sidebar.radio("", ["🏠 Home", "📊 Stock Market Dashboard", "🚨 Price Alert", "🔄 Stock Comparison"])
+def create_sidebar_section(title, icon):
+    return f"""
+    <div class="sidebar-section" onclick="window.location.href='#{title.replace(' ', '-').lower()}'">
+        {icon} {title}
+    </div>
+    """
+
+# Render sidebar sections
+st.sidebar.markdown(create_sidebar_section("Home", "🏠"), unsafe_allow_html=True)
+st.sidebar.markdown(create_sidebar_section("Stock Market Dashboard", "📊"), unsafe_allow_html=True)
+st.sidebar.markdown(create_sidebar_section("Price Alert", "🚨"), unsafe_allow_html=True)
+st.sidebar.markdown(create_sidebar_section("Stock Comparison", "🔄"), unsafe_allow_html=True)
+
+# Add a divider
+st.sidebar.markdown("---")
 
 # Additional Information Section
-st.sidebar.markdown("---")
 st.sidebar.markdown("### ℹ️ Information")
 st.sidebar.info("""
 This app provides real-time stock market data, price alerts, and advanced stock comparison tools. 
@@ -77,11 +115,18 @@ st.sidebar.info("""
 """)
 
 # Home Page
-if page == "🏠 Home":
+if st.sidebar.button("🏠 Home"):
+    st.session_state.page = "Home"
+
+if "page" not in st.session_state:
+    st.session_state.page = "Home"
+
+if st.session_state.page == "Home":
+    st.title("🏠 Home")
     st.image("https://source.unsplash.com/featured/?stocks,market", use_column_width=True)
 
 # Stock Market Dashboard
-elif page == "📊 Stock Market Dashboard":
+elif st.session_state.page == "Stock Market Dashboard":
     st.title("📊 Stock Market Dashboard")
     
     selected_company = st.selectbox("📌 Select a Company", list(companies.keys()))
@@ -154,7 +199,7 @@ elif page == "📊 Stock Market Dashboard":
                     st.warning("💡 Recommendation: Wait for better entry point")
 
 # Price Alert Section
-elif page == "🚨 Price Alert":
+elif st.session_state.page == "Price Alert":
     st.title("🚨 Price Alert")
 
     if "alerts" not in st.session_state:
@@ -206,7 +251,7 @@ elif page == "🚨 Price Alert":
                 st.warning(f"⚠ Couldn't fetch data for {alert['company']}")
 
 # Stock Comparison Section
-elif page == "🔄 Stock Comparison":
+elif st.session_state.page == "Stock Comparison":
     st.title("🔄 Advanced Stock Comparison")
 
     company_list = list(companies.keys())

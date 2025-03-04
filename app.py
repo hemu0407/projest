@@ -2,8 +2,10 @@ import streamlit as st
 import requests
 import pandas as pd
 import plotly.express as px
+from sklearn.linear_model import LinearRegression
+import numpy as np
 
-# Alpha Vantage API Key (Replace with your own key)
+# Alpha Vantage API Key
 API_KEY = "EY0BHX91K5UY3W6Q"
 
 # List of companies and their stock symbols
@@ -12,75 +14,58 @@ companies = {
     "Microsoft (MSFT)": "MSFT",
     "Google (GOOGL)": "GOOGL",
     "Amazon (AMZN)": "AMZN",
-    "Tesla (TSLA)": "TSLA",
-    "Meta (META)": "META",
-    "Netflix (NFLX)": "NFLX",
-    "Nvidia (NVDA)": "NVDA",
-    "IBM (IBM)": "IBM",
-    "Intel (INTC)": "INTC"
+    "Tesla (TSLA)": "TSLA"
 }
 
 # Streamlit UI
 st.set_page_config(page_title="Stock Market Dashboard", layout="wide")
-st.title("📈 Beginner-Friendly Stock Market Dashboard")
 
-# Theme Toggle
 dark_mode = st.toggle("🌗 Toggle Dark/Light Mode", value=True)
 
-# Define styles based on the mode
-plot_theme = "plotly_dark" if dark_mode else "plotly_white"
+theme = "plotly_dark" if dark_mode else "plotly_white"
 
-# Multi-Stock Selection
-selected_companies = st.multiselect("Select Companies", list(companies.keys()), default=["Apple (AAPL)"])
+selected_company = st.selectbox("Select a Company", list(companies.keys()))
+investment_amount = st.slider("Enter amount to invest ($)", min_value=10, max_value=10000, step=10)
 
-# Function to fetch stock data
 def get_stock_data(symbol):
     url = f"https://www.alphavantage.co/query?function=TIME_SERIES_INTRADAY&symbol={symbol}&interval=5min&apikey={API_KEY}&outputsize=full"
     response = requests.get(url)
-    data = response.json()
-    return data
+    return response.json()
 
-# Fetch Data Button
 if st.button("Fetch Stock Data"):
-    all_stock_data = {}
+    symbol = companies[selected_company]
+    stock_data = get_stock_data(symbol)
 
-    for company in selected_companies:
-        symbol = companies[company]
-        stock_data = get_stock_data(symbol)
+    if "Time Series (5min)" in stock_data:
+        df = pd.DataFrame.from_dict(stock_data["Time Series (5min)"], orient="index")
+        df = df.astype(float)
+        df.index = pd.to_datetime(df.index)
+        df = df.sort_index()
+        df.columns = ["Open", "High", "Low", "Close", "Volume"]
+        
+        start_price = df.iloc[0]["Close"]
+        current_price = df.iloc[-1]["Close"]
+        highest_price = df["High"].max()
+        
+        st.metric("Starting Price ($)", round(start_price, 2))
+        st.metric("Current Price ($)", round(current_price, 2))
+        st.metric("Highest Price ($)", round(highest_price, 2))
+        
+        df["MA_20"] = df["Close"].rolling(window=20).mean()
+        decision = "Buy" if df.iloc[-1]["Close"] > df.iloc[-1]["MA_20"] else "Sell"
+        st.subheader(f"Recommendation: {decision}")
 
-        if "Time Series (5min)" in stock_data:
-            df = pd.DataFrame.from_dict(stock_data["Time Series (5min)"], orient="index")
-            df = df.astype(float)
-            df.index = pd.to_datetime(df.index)
-            df = df.sort_index()
-            df["Company"] = company
-            df.columns = ["Open", "High", "Low", "Close", "Volume", "Company"]
-            all_stock_data[company] = df
-        else:
-            st.warning(f"⚠️ Could not fetch data for {company}. API limit may have been reached!")
+        x = np.arange(len(df)).reshape(-1, 1)
+        y = df["Close"].values
+        model = LinearRegression().fit(x, y)
+        future_price = model.predict([[len(df) + 10]])[0]
+        percentage_change = ((future_price - current_price) / current_price) * 100
 
-    # Combine all stocks into one DataFrame
-    if all_stock_data:
-        combined_df = pd.concat(all_stock_data.values())
-
-        for company, df in all_stock_data.items():
-            st.subheader(f"📊 {company} Stock Details")
-            starting_price = df.iloc[0]["Open"]
-            current_price = df.iloc[-1]["Close"]
-            highest_price = df["High"].max()
-
-            st.metric(label="Starting Price", value=f"${starting_price:.2f}")
-            st.metric(label="Current Price", value=f"${current_price:.2f}")
-            st.metric(label="Highest Price of the Day", value=f"${highest_price:.2f}")
-
-        # Plot all selected stocks
-        fig = px.line(
-            combined_df,
-            x=combined_df.index,
-            y="Close",
-            color="Company",
-            title="Stock Trends Comparison",
-            labels={"Close": "Stock Price", "index": "Date"},
-            template=plot_theme
-        )
+        st.subheader(f"Predicted Price Change: {round(percentage_change, 2)}%")
+        num_stocks = investment_amount / current_price
+        st.subheader(f"You can buy approximately {int(num_stocks)} stocks with ${investment_amount}")
+        
+        fig = px.line(df, x=df.index, y="Close", title="Stock Price Trend", template=theme)
         st.plotly_chart(fig)
+    else:
+        st.warning("⚠️ Unable to fetch stock data. API limit may be reached!")

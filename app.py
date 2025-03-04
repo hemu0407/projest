@@ -4,7 +4,7 @@ import pandas as pd
 import plotly.express as px
 
 # Alpha Vantage API Key
-API_KEY = "QVQRLHHR3IS7BLSS"
+API_KEY = "YOUR_ALPHA_VANTAGE_API_KEY"
 
 # List of companies and their stock symbols
 companies = {
@@ -20,59 +20,81 @@ companies = {
     "Intel (INTC)": "INTC"
 }
 
-# UI Theme Toggle
-mode = st.toggle("🌞 Light Mode / 🌙 Dark Mode", value=False)
+# Streamlit UI
+st.set_page_config(page_title="Stock Market Dashboard", layout="wide")
 
-# Set Theme
-if mode:
-    background_color = "#ffffff"
-    text_color = "#000000"
-    chart_theme = "plotly_white"
+# Theme Toggle
+dark_mode = st.toggle("🌗 Toggle Dark/Light Mode", value=True)
+
+# Define styles based on the mode
+if dark_mode:
+    background_color = "#1E1E1E"  # Dark background
+    text_color = "#FFFFFF"  # White text
+    plot_theme = "plotly_dark"
 else:
-    background_color = "#0e1117"
-    text_color = "#ffffff"
-    chart_theme = "plotly_dark"
+    background_color = "#F0F0F0"  # Light background
+    text_color = "#000000"  # Black text
+    plot_theme = "plotly_white"
 
-st.markdown(f"""
+# Apply custom styles
+st.markdown(
+    f"""
     <style>
         body {{
             background-color: {background_color};
             color: {text_color};
         }}
+        .stApp {{
+            background-color: {background_color};
+            color: {text_color};
+        }}
     </style>
-""", unsafe_allow_html=True)
+    """,
+    unsafe_allow_html=True
+)
 
-st.title("📈 Stock Market Prediction & Analysis")
-
-# Multi-Company Selection
+# Multi-Stock Selection
 selected_companies = st.multiselect("Select Companies", list(companies.keys()), default=["Apple (AAPL)"])
 
+# Function to fetch stock data
 def get_stock_data(symbol):
     url = f"https://www.alphavantage.co/query?function=TIME_SERIES_INTRADAY&symbol={symbol}&interval=5min&apikey={API_KEY}&outputsize=full"
     response = requests.get(url)
     data = response.json()
     return data
 
+# Fetch Data Button
 if st.button("Fetch Stock Data"):
-    all_data = []
+    all_stock_data = {}
+
     for company in selected_companies:
         symbol = companies[company]
         stock_data = get_stock_data(symbol)
-        
+
         if "Time Series (5min)" in stock_data:
             df = pd.DataFrame.from_dict(stock_data["Time Series (5min)"], orient="index")
-            df = df.astype(float)
-            df.index = pd.to_datetime(df.index)
-            df = df.sort_index()
-            df.columns = ["Open", "High", "Low", "Close", "Volume"]
-            df["Company"] = company
-            df["SMA_10"] = df["Close"].rolling(window=10).mean()
-            all_data.append(df)
-    
-    if all_data:
-        combined_df = pd.concat(all_data)
-        fig = px.line(combined_df, x=combined_df.index, y="Close", color="Company", title="Stock Trends Comparison",
-                      labels={"Close": "Stock Price", "index": "Date"}, template=chart_theme)
+            df = df.astype(float)  # Convert values to float
+            df.index = pd.to_datetime(df.index)  # Convert index to datetime
+            df = df.sort_index()  # Sort the data
+            df["Company"] = company  # Add company name for multi-stock comparison
+            df.columns = ["Open", "High", "Low", "Close", "Volume", "Company"]
+            all_stock_data[company] = df
+        else:
+            st.warning(f"⚠️ Could not fetch data for {company}. API limit may have been reached!")
+
+    # Combine all stocks into one DataFrame
+    if all_stock_data:
+        combined_df = pd.concat(all_stock_data.values())
+
+        # Plot all selected stocks
+        fig = px.line(
+            combined_df,
+            x=combined_df.index,
+            y="Close",
+            color="Company",
+            title="Stock Trends Comparison",
+            labels={"Close": "Stock Price", "index": "Date"},
+            template=plot_theme
+        )
         st.plotly_chart(fig)
-    else:
-        st.error("⚠️ Could not fetch stock data. API limit may have been reached!")
+

@@ -114,7 +114,7 @@ if page == "📊 Stock Market Dashboard":
             st.info(f"💰 *Total Investment:* ${total_cost:.2f}")
 
             # **📈 Future Trend Prediction (Moving Averages)**
-            st.subheader("📈 Future Stock Price Prediction (Moving Averages)")
+            st.subheader("📈 Future Stock Price Prediction")
 
             # Calculate moving average
             window_size = 10  # Adjust window size as needed

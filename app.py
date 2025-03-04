@@ -5,7 +5,7 @@ import plotly.express as px
 import numpy as np
 
 # Alpha Vantage API Key
-API_KEY = "QVQRLHHR3IS7BLSS"
+API_KEY = "YOUR_ALPHA_VANTAGE_API_KEY"
 
 # List of companies and their stock symbols
 companies = {
@@ -68,9 +68,9 @@ if st.button("Fetch Stock Data"):
         st.plotly_chart(fig)
 
         # Calculate Buy/Sell percentages based on trend
-        recent_trend = df["SMA_10"].pct_change().dropna()  # Calculate % change
+        recent_trend = df["SMA_10"].pct_change().dropna()
         buy_percentage = max(0, round(recent_trend.iloc[-1] * 100, 2))
-        sell_percentage = max(0, round(-recent_trend.iloc[-1] * 100, 2))
+        sell_percentage = max(0, round(100 - buy_percentage, 2))  # Ensure total is 100%
 
         # Display Buy/Sell buttons
         col1, col2 = st.columns(2)

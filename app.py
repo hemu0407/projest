@@ -6,8 +6,8 @@ import plotly.express as px
 # Set Page Configuration (MUST be first)
 st.set_page_config(page_title="Stock Market App", layout="wide")
 
-# JavaScript for Sidebar Toggle
-toggle_sidebar_script = """
+# Sidebar Toggle Button (☰) using JavaScript
+sidebar_toggle_js = """
 <script>
     function toggleSidebar() {
         var sidebar = parent.document.querySelector("[data-testid='stSidebar']");
@@ -20,9 +20,39 @@ toggle_sidebar_script = """
 </script>
 """
 
-# Inject Sidebar Toggle Button
-st.markdown(toggle_sidebar_script, unsafe_allow_html=True)
-st.markdown('<button onclick="toggleSidebar()" style="position:fixed; top:10px; left:10px; background:#333; color:white; border:none; padding:10px 15px; cursor:pointer;">☰</button>', unsafe_allow_html=True)
+# Inject JavaScript into the page
+st.markdown(sidebar_toggle_js, unsafe_allow_html=True)
+
+# Create a floating ☰ button for the sidebar
+st.markdown(
+    """
+    <button onclick="toggleSidebar()" 
+    style="
+        position:fixed;
+        top:10px;
+        left:10px;
+        background:#333;
+        color:white;
+        border:none;
+        padding:10px 15px;
+        font-size:24px;
+        cursor:pointer;
+    ">☰</button>
+    """,
+    unsafe_allow_html=True,
+)
+
+# Sidebar Navigation
+st.sidebar.title("📌 Navigation")
+page = st.sidebar.radio("Go to", ["🏠 Home", "📊 Stock Market Dashboard", "🚨 Price Alert", "🔄 Stock Comparison"])
+
+# Dummy Home Page
+if page == "🏠 Home":
+    st.image("https://source.unsplash.com/featured/?stocks,market", use_column_width=True)
+
+# Other Pages...
+elif page == "📊 Stock Market Dashboard":
+    st.title("📊 Stock Market Dashboard")
 
 # Alpha Vantage API Key
 API_KEY = "3N5V8TAO9YIDT59Q"

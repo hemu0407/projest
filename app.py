@@ -35,6 +35,7 @@ def get_stock_data(symbol):
 if "alerts" not in st.session_state:
     st.session_state.alerts = []
 
+# Set default page
 if "page" not in st.session_state:
     st.session_state.page = "Home"
 
@@ -120,6 +121,11 @@ st.sidebar.info("""
 **Date:** 2023-10-01  
 **Version:** 1.0.0
 """)
+
+# Update session state based on query parameter
+query_params = st.experimental_get_query_params()
+if "page" in query_params:
+    st.session_state.page = query_params["page"][0]
 
 # Home Page
 if st.session_state.page == "Home":

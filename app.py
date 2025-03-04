@@ -2,6 +2,7 @@ import streamlit as st
 import requests
 import pandas as pd
 import plotly.express as px
+import numpy as np
 
 # Alpha Vantage API Key
 API_KEY = "QVQRLHHR3IS7BLSS"
@@ -23,10 +24,14 @@ companies = {
 # Streamlit UI
 st.title("📈 Stock Market Prediction & Analysis")
 
-# Multi-select dropdown for multiple company selection
+# Dark/Light Mode Toggle
+theme = st.radio("Select Theme", ["Dark Mode", "Light Mode"], index=0)
+theme_template = "plotly_dark" if theme == "Dark Mode" else "plotly_white"
+
+# Multi-select dropdown for company selection
 selected_companies = st.multiselect("Select Companies", list(companies.keys()), default=["Apple (AAPL)", "Microsoft (MSFT)"])
 
-# Function to fetch stock data
+# Fetch stock data function
 def get_stock_data(symbol):
     url = f"https://www.alphavantage.co/query?function=TIME_SERIES_INTRADAY&symbol={symbol}&interval=5min&apikey={API_KEY}&outputsize=full"
     response = requests.get(url)
@@ -35,7 +40,7 @@ def get_stock_data(symbol):
 
 # Button to fetch data
 if st.button("Fetch Stock Data"):
-    all_stock_data = {}  # Dictionary to store data for multiple companies
+    all_stock_data = {}
 
     for company in selected_companies:
         symbol = companies[company]
@@ -43,36 +48,27 @@ if st.button("Fetch Stock Data"):
 
         if "Time Series (5min)" in stock_data:
             df = pd.DataFrame.from_dict(stock_data["Time Series (5min)"], orient="index")
-            df = df.astype(float)  # Convert values to float
-            df.index = pd.to_datetime(df.index)  # Convert index to datetime
-            df = df.sort_index()  # Sort the data
+            df = df.astype(float)
+            df.index = pd.to_datetime(df.index)
+            df = df.sort_index()
             df.columns = ["Open", "High", "Low", "Close", "Volume"]
-            df["Company"] = company  # Add a company column
-            all_stock_data[company] = df  # Store in dictionary
-
+            df["Company"] = company
+            df["SMA_10"] = df["Close"].rolling(window=10).mean()
+            all_stock_data[company] = df
         else:
             st.error(f"⚠️ Could not fetch data for {company}. API limit may have been reached!")
 
-    # If data is available, proceed with visualization
     if all_stock_data:
-        combined_df = pd.concat(all_stock_data.values())  # Merge all company data
-
-        # Moving Average for Trend Prediction
-        for company, df in all_stock_data.items():
-            df["SMA_10"] = df["Close"].rolling(window=10).mean()  # 10-period Simple Moving Average
-
-        # Line Chart with Multiple Companies
-        fig = px.line(combined_df, x=combined_df.index, y="Close", color="Company", 
-                      title="Stock Trends Comparison", labels={"Close": "Stock Price", "index": "Date"},
-                      template="plotly_dark")
-
+        combined_df = pd.concat(all_stock_data.values())
+        fig = px.line(combined_df, x=combined_df.index, y=["Close", "SMA_10"], color="Company",
+                      title="Stock Trends Comparison", labels={"value": "Stock Price", "index": "Date"},
+                      template=theme_template)
         st.plotly_chart(fig)
 
-        # Simple Investment Advice for Each Company
+        # Investment Advice for Each Stock
         for company, df in all_stock_data.items():
             st.subheader(f"📊 {company} - Investment Advice")
-            if df["SMA_10"].iloc[-1] > df["SMA_10"].iloc[-2]:  
+            if df["SMA_10"].iloc[-1] > df["SMA_10"].iloc[-2]:
                 st.success(f"📈 **{company}** is trending **upward**. Might be a good time to invest!")
             else:
                 st.warning(f"📉 **{company}** is trending **downward**. Consider waiting.")
-

@@ -36,23 +36,33 @@ dark_mode = st.toggle("🌗 Toggle Dark/Light Mode", value=st.session_state.dark
 st.session_state.dark_mode = dark_mode
 plot_theme = "plotly_dark" if st.session_state.dark_mode else "plotly_white"
 st.markdown(
-    """
+    f"""
     <style>
-        body {
-            background-color: #0e1117 if dark_mode else #ffffff;
-            color: #ffffff if dark_mode else #000000;
-        }
-        .stButton>button {
-            background-color: #1f77b4 if dark_mode else #4caf50;
+        body {{
+            background-color: {'#0e1117' if dark_mode else '#f4f4f4'};
+            color: {'#ffffff' if dark_mode else '#000000'};
+        }}
+        .stButton>button {{
+            background-color: {'#1f77b4' if dark_mode else '#4caf50'};
             color: white;
-        }
+            font-size: 16px;
+            border-radius: 8px;
+        }}
+        .stSelectbox div {{
+            font-size: 18px;
+        }}
+        .stNumberInput input {{
+            font-size: 16px;
+        }}
     </style>
     """,
     unsafe_allow_html=True
 )
 
 # Company selection
-selected_company = st.selectbox("Select a Company", list(companies.keys()))
+st.title("📊 Stock Market Dashboard")
+st.markdown("---")
+selected_company = st.selectbox("📌 Select a Company", list(companies.keys()))
 
 # Function to fetch stock data
 def get_stock_data(symbol):
@@ -62,7 +72,7 @@ def get_stock_data(symbol):
     return data
 
 # Fetch data button
-if st.button("Fetch Stock Data"):
+if st.button("🔍 Fetch Stock Data"):
     stock_data = get_stock_data(companies[selected_company])
 
     if "Time Series (5min)" in stock_data:
@@ -83,9 +93,9 @@ if st.session_state.stock_data is not None:
     starting_price = df["Open"].iloc[0]
 
     st.subheader(f"📈 {selected_company} Stock Details")
-    st.write(f"*Current Price:* ${current_price:.2f}")
-    st.write(f"*Highest Price:* ${highest_price:.2f}")
-    st.write(f"*Starting Price:* ${starting_price:.2f}")
+    st.info(f"💰 **Current Price:** ${current_price:.2f}")
+    st.success(f"📈 **Highest Price:** ${highest_price:.2f}")
+    st.warning(f"🔽 **Starting Price:** ${starting_price:.2f}")
 
     # Display Intraday Graph
     fig = px.line(df, x=df.index, y="Close", title="📊 Intraday Stock Prices", labels={"Close": "Stock Price"}, template=plot_theme)
@@ -97,14 +107,14 @@ if st.session_state.stock_data is not None:
     st.plotly_chart(fig_long)
 
     # Ask for investment amount
-    num_stocks = st.number_input("Enter number of stocks to buy", min_value=1, step=1)
+    num_stocks = st.number_input("🛒 Enter number of stocks to buy", min_value=1, step=1)
 
     # Calculate and display grand total
     grand_total = num_stocks * current_price
-    st.write(f"💰 *Grand Total Investment:* ${grand_total:.2f}")
+    st.info(f"💰 **Total Investment:** ${grand_total:.2f}")
 
     # Get Results button
-    if st.button("Get Results"):
+    if st.button("📊 Get Investment Results"):
         total_investment = num_stocks * current_price
 
         # Prepare data for SVM prediction
@@ -135,9 +145,9 @@ if st.session_state.stock_data is not None:
         st.subheader("📊 Investment Prediction")
 
         if profit_loss_percentage > 0:
-            st.success(f"✅ *Good Investment!* Estimated profit: *{profit_loss_percentage:.2f}%*")
-            st.write(f"💰 *Projected Profit:* ${potential_profit_loss:.2f}")
-            st.write(f"📌 *Best Time to Sell:* In 10 intervals")
+            st.success(f"✅ **Good Investment!** Estimated profit: **{profit_loss_percentage:.2f}%**")
+            st.info(f"💰 **Projected Profit:** ${potential_profit_loss:.2f}")
+            st.write(f"📌 **Best Time to Sell:** In 10 intervals")
         else:
-            st.error(f"❌ *Don't Invest!* Estimated loss: *{abs(profit_loss_percentage):.2f}%*")
-            st.write(f"⚠ *Potential Loss:* ${abs(potential_profit_loss):.2f}")
+            st.error(f"❌ **Don't Invest!** Estimated loss: **{abs(profit_loss_percentage):.2f}%**")
+            st.warning(f"⚠ **Potential Loss:** ${abs(potential_profit_loss):.2f}")

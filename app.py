@@ -7,7 +7,7 @@ from sklearn.linear_model import LinearRegression
 from sklearn.model_selection import train_test_split
 
 # Alpha Vantage API Key
-API_KEY = "YOUR_ALPHA_VANTAGE_API_KEY"
+API_KEY = "EY0BHX91K5UY3W6Q"
 
 # List of stock symbols for intraday trading
 companies = {

@@ -18,7 +18,10 @@ companies = {
     "Tesla (TSLA)": "TSLA",
 }
 
-# Streamlit UI
+# Store selected stock quantity in session state
+if "stocks_to_buy" not in st.session_state:
+    st.session_state.stocks_to_buy = 10  # Default value
+
 st.set_page_config(page_title="Stock Predictor", layout="wide")
 st.title("📈 Stock Predictor - Intraday Analysis")
 
@@ -59,10 +62,12 @@ if st.button("🔍 Fetch Stock Data"):
         st.plotly_chart(fig)
 
         # Ask user how many stocks they want to buy
-        stocks_to_buy = st.slider("Select the number of stocks to buy", min_value=1, max_value=1000, value=10)
+        st.session_state.stocks_to_buy = st.slider("Select the number of stocks to buy", 
+                                                   min_value=1, max_value=1000, 
+                                                   value=st.session_state.stocks_to_buy)
 
         # Calculate Total Investment
-        total_investment = stocks_to_buy * current_price
+        total_investment = st.session_state.stocks_to_buy * current_price
         st.info(f"💰 **Total Investment: ${total_investment:.2f}**")
 
         # Prepare Data for Machine Learning Model (SVM)
@@ -94,26 +99,21 @@ if st.button("🔍 Fetch Stock Data"):
         profit_per_stock = predicted_high - current_price
         loss_per_stock = predicted_low - current_price
 
-        total_profit = profit_per_stock * stocks_to_buy
-        total_loss = loss_per_stock * stocks_to_buy
+        total_profit = profit_per_stock * st.session_state.stocks_to_buy
+        total_loss = loss_per_stock * st.session_state.stocks_to_buy
 
         profit_percentage = (profit_per_stock / current_price) * 100
         loss_percentage = abs((loss_per_stock / current_price) * 100)
 
-        # Display only Profit OR Loss (not both)
+        # Display Profit or Loss
         if total_profit > 0:
             st.success(f"✅ **Potential Profit: ${total_profit:.2f} ({profit_percentage:.2f}%)** if stock reaches predicted high of ${predicted_high:.2f}")
             best_sell_time = future_df.loc[future_df["Predicted Price"].idxmax(), "Time"]
-            st.write(f"🕒 **Best Time to Sell (Expected High):** {best_sell_time.strftime('%H:%M %p')}")
+            st.write(f"🕒 **Best Time to Sell:** {best_sell_time.strftime('%H:%M %p')}")
 
-        elif total_loss < 0:
-            st.error(f"⚠️ **Potential Loss: ${abs(total_loss):.2f} ({loss_percentage:.2f}%)** if stock drops to predicted low of ${predicted_low:.2f}")
-
-        # Final Recommendation
-        if profit_percentage > loss_percentage:
-            st.success("📈 **Recommended: Buy Now. Market trend shows a potential uptrend.**")
         else:
-            st.warning("📉 **Not Recommended: High risk of loss detected. Do not invest.**")
+            st.error(f"⚠️ **Potential Loss: ${abs(total_loss):.2f} ({loss_percentage:.2f}%)**")
+            st.warning("🚫 **Don't buy. Market trend shows high risk of loss.**")
 
     else:
         st.error("⚠️ Could not fetch intraday stock data!")

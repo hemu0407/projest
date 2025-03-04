@@ -1,129 +1,128 @@
 import streamlit as st
-import yfinance as yf
-import numpy as np
+import requests
 import pandas as pd
-import plotly.graph_objects as go
+import plotly.express as px
 from sklearn.svm import SVR
-from datetime import datetime, timedelta
+import numpy as np
 
-# Streamlit UI Setup
-st.set_page_config(page_title="Stock Market Prediction", layout="wide")
+# Alpha Vantage API Key
+API_KEY = "CIGY6168CBD8UPYV"
+
+# List of companies and their stock symbols
+companies = {
+    "Apple (AAPL)": "AAPL",
+    "Microsoft (MSFT)": "MSFT",
+    "Google (GOOGL)": "GOOGL",
+    "Amazon (AMZN)": "AMZN",
+    "Tesla (TSLA)": "TSLA",
+    "Meta (META)": "META",
+    "Netflix (NFLX)": "NFLX",
+    "Nvidia (NVDA)": "NVDA",
+    "IBM (IBM)": "IBM",
+    "Intel (INTC)": "INTC"
+}
+
+# Streamlit UI
+st.set_page_config(page_title="Stock Market Dashboard", layout="wide")
+
+# Initialize session state for storing stock data and theme mode
+if "stock_data" not in st.session_state:
+    st.session_state.stock_data = None
+if "dark_mode" not in st.session_state:
+    st.session_state.dark_mode = True  # Default theme
 
 # Theme Toggle
-dark_mode = st.toggle("🌗 Toggle Dark/Light Mode", value=True)
+dark_mode = st.toggle("🌗 Toggle Dark/Light Mode", value=st.session_state.dark_mode)
+st.session_state.dark_mode = dark_mode
+plot_theme = "plotly_dark" if st.session_state.dark_mode else "plotly_white"
 
-# Define styles based on theme
-if dark_mode:
-    primary_bg = "#1E1E1E"
-    secondary_bg = "#252526"
-    text_color = "#FFFFFF"
-    input_bg = "#333333"
-    plot_theme = "plotly_dark"
-else:
-    primary_bg = "#F5F5F5"
-    secondary_bg = "#FFFFFF"
-    text_color = "#000000"
-    input_bg = "#DDDDDD"
-    plot_theme = "plotly_white"
+# Company selection
+selected_company = st.selectbox("Select a Company", list(companies.keys()))
 
-# Apply custom styles
-st.markdown(
-    f"""
-    <style>
-        .stApp {{
-            background-color: {primary_bg};
-            color: {text_color};
-        }}
-        div[data-testid="stMarkdownContainer"] {{
-            color: {text_color};
-        }}
-        .stTextInput, .stNumberInput, .stSelectbox {{
-            background-color: {input_bg};
-            color: {text_color};
-        }}
-        .stButton button {{
-            background-color: {secondary_bg};
-            color: {text_color};
-            border-radius: 8px;
-            padding: 10px;
-            transition: 0.3s;
-        }}
-        .stButton button:hover {{
-            background-color: #4CAF50;
-            color: white;
-        }}
-    </style>
-    """,
-    unsafe_allow_html=True
-)
+# Function to fetch stock data
+def get_stock_data(symbol):
+    url = f"https://www.alphavantage.co/query?function=TIME_SERIES_INTRADAY&symbol={symbol}&interval=5min&apikey={API_KEY}&outputsize=full"
+    response = requests.get(url)
+    data = response.json()
+    return data
 
-st.title("📈 Intraday Stock Market Prediction")
-
-# Select company
-company = st.selectbox("Select a Stock", ["AAPL", "GOOGL", "MSFT", "TSLA", "AMZN"])
-
+# Fetch data button
 if st.button("Fetch Stock Data"):
-    stock = yf.Ticker(company)
-    hist = stock.history(period="1d", interval="5m")  # Fetch intraday data
+    stock_data = get_stock_data(companies[selected_company])
 
-    if hist.empty:
-        st.error("No intraday data available. Try another stock.")
+    if "Time Series (5min)" in stock_data:
+        df = pd.DataFrame.from_dict(stock_data["Time Series (5min)"], orient="index")
+        df = df.astype(float)
+        df.index = pd.to_datetime(df.index)
+        df = df.sort_index()
+        df.columns = ["Open", "High", "Low", "Close", "Volume"]
+        st.session_state.stock_data = df  # Store in session state
     else:
-        st.subheader(f"Stock Data for {company}")
+        st.warning(f"⚠ Could not fetch data for {selected_company}. API limit may have been reached!")
 
-        # Display key stock details
-        st.write(f"**Current Price:** ${hist['Close'].iloc[-1]:.2f}")
-        st.write(f"**Highest Price Today:** ${hist['High'].max():.2f}")
-        st.write(f"**Opening Price Today:** ${hist['Open'][0]:.2f}")
+# Display stock data if available
+if st.session_state.stock_data is not None:
+    df = st.session_state.stock_data
+    current_price = df["Close"].iloc[-1]
+    highest_price = df["High"].max()
+    starting_price = df["Open"].iloc[0]
 
-        # Display stock intraday graph
-        fig = go.Figure()
-        fig.add_trace(go.Candlestick(
-            x=hist.index, open=hist['Open'], high=hist['High'],
-            low=hist['Low'], close=hist['Close'], name="Stock Data"
-        ))
-        fig.update_layout(title="Intraday Stock Prices", xaxis_title="Time", yaxis_title="Price", template=plot_theme)
-        st.plotly_chart(fig, use_container_width=True)
+    st.subheader(f"📈 {selected_company} Stock Details")
+    st.write(f"*Current Price:* ${current_price:.2f}")
+    st.write(f"*Highest Price:* ${highest_price:.2f}")
+    st.write(f"*Starting Price:* ${starting_price:.2f}")
 
-        # Ask for the number of stocks to invest in
-        num_stocks = st.number_input("Enter the number of stocks to buy", min_value=1, step=1)
+    # Display Intraday Graph
+    fig = px.line(df, x=df.index, y="Close", title="📊 Intraday Stock Prices", labels={"Close": "Stock Price"}, template=plot_theme)
+    st.plotly_chart(fig)
 
-        if st.button("Get Results"):
-            # Calculate total investment
-            total_amount = num_stocks * hist['Close'].iloc[-1]
-            st.write(f"**Total Investment Amount:** ${total_amount:.2f}")
+    # Long-Term Graph (Dummy Data for Demonstration)
+    df_long = df.resample("D").mean().dropna()  # Resampling for daily mean (mock)
+    fig_long = px.line(df_long, x=df_long.index, y="Close", title="📊 Long-Term Stock Trend", labels={"Close": "Stock Price"}, template=plot_theme)
+    st.plotly_chart(fig_long)
 
-            # Train SVM model to predict future price
-            hist['Time_Index'] = np.arange(len(hist))  # Convert time to numerical index
-            X = hist[['Time_Index']].values
-            y = hist['Close'].values
+    # Ask for investment amount
+    num_stocks = st.number_input("Enter number of stocks to buy", min_value=1, step=1)
 
-            model = SVR(kernel='rbf', C=100, gamma=0.1, epsilon=0.1)
-            model.fit(X, y)
+    # Calculate and display grand total
+    grand_total = num_stocks * current_price
+    st.write(f"💰 *Grand Total Investment:* ${grand_total:.2f}")
 
-            # Predict next time step
-            next_time_step = np.array([[X[-1][0] + 1]])  # Next index
-            predicted_price = model.predict(next_time_step)[0]
+    # Get Results button
+    if st.button("Get Results"):
+        total_investment = num_stocks * current_price
 
-            st.write(f"**Predicted Next Price:** ${predicted_price:.2f}")
+        # Prepare data for SVM prediction
+        df["Time"] = np.arange(len(df))  # Convert time into numerical format
+        X = df["Time"].values.reshape(-1, 1)
+        y = df["Close"].values.reshape(-1, 1)
 
-            # Profit or Loss Calculation
-            price_difference = predicted_price - hist['Close'].iloc[-1]
-            profit_or_loss = (price_difference / hist['Close'].iloc[-1]) * 100
+        # Train SVM model
+        model = SVR(kernel="rbf", C=100, gamma=0.1, epsilon=0.1)
+        model.fit(X, y.ravel())
 
-            if price_difference > 0:
-                st.success(f"✅ Expected Profit: {profit_or_loss:.2f}%")
-                st.write("💰 **Best Time to Sell: Hold for a Short Gain!**")
-            else:
-                st.error(f"❌ Expected Loss: {abs(profit_or_loss):.2f}%")
-                st.write("⚠️ **Advice: Don't Buy This Stock!**")
+        # Predict future prices for the next 10 intervals
+        future_time = np.array([[X[-1][0] + i] for i in range(1, 11)])
+        future_predictions = model.predict(future_time)
 
-            # Future trend prediction graph
-            future_times = [hist.index[-1] + timedelta(minutes=5 * i) for i in range(1, 11)]
-            future_predictions = [model.predict([[X[-1][0] + i]])[0] for i in range(1, 11)]
+        # Future trend graph
+        future_dates = pd.date_range(start=df.index[-1], periods=10, freq="5min")
+        df_future = pd.DataFrame({"Date": future_dates, "Predicted Price": future_predictions})
 
-            fig_future = go.Figure()
-            fig_future.add_trace(go.Scatter(x=hist.index, y=hist['Close'], mode='lines', name="Actual"))
-            fig_future.add_trace(go.Scatter(x=future_times, y=future_predictions, mode='lines', name="Predicted", line=dict(dash='dot')))
-            fig_future.update_layout(title="Intraday Future Trend", xaxis_title="Time", yaxis_title="Stock Price", template=plot_theme)
-            st.plotly_chart(fig_future, use_container_width=True)
+        fig_future = px.line(df_future, x="Date", y="Predicted Price", title="🔮 Predicted Future Trend", template=plot_theme)
+        st.plotly_chart(fig_future)
+
+        # Calculate profit/loss percentage
+        predicted_price = future_predictions[-1]  # Take last predicted price
+        profit_loss_percentage = ((predicted_price - current_price) / current_price) * 100
+        potential_profit_loss = num_stocks * (predicted_price - current_price)
+
+        st.subheader("📊 Investment Prediction")
+
+        if profit_loss_percentage > 0:
+            st.success(f"✅ *Good Investment!* Estimated profit: *{profit_loss_percentage:.2f}%*")
+            st.write(f"💰 *Projected Profit:* ${potential_profit_loss:.2f}")
+            st.write(f"📌 *Best Time to Sell:* In 10 intervals")
+        else:
+            st.error(f"❌ *Don't Invest!* Estimated loss: *{abs(profit_loss_percentage):.2f}%*")
+            st.write(f"⚠ *Potential Loss:* ${abs(potential_profit_loss):.2f}")

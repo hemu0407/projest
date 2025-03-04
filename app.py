@@ -3,7 +3,7 @@ import requests
 import pandas as pd
 import plotly.express as px
 
-# Alpha Vantage API Key
+# Alpha Vantage API Key (Replace with your own key)
 API_KEY = "EY0BHX91K5UY3W6Q"
 
 # List of companies and their stock symbols
@@ -22,36 +22,13 @@ companies = {
 
 # Streamlit UI
 st.set_page_config(page_title="Stock Market Dashboard", layout="wide")
+st.title("📈 Beginner-Friendly Stock Market Dashboard")
 
 # Theme Toggle
 dark_mode = st.toggle("🌗 Toggle Dark/Light Mode", value=True)
 
 # Define styles based on the mode
-if dark_mode:
-    background_color = "#1E1E1E"  # Dark background
-    text_color = "#FFFFFF"  # White text
-    plot_theme = "plotly_dark"
-else:
-    background_color = "#F0F0F0"  # Light background
-    text_color = "#000000"  # Black text
-    plot_theme = "plotly_white"
-
-# Apply custom styles
-st.markdown(
-    f"""
-    <style>
-        body {{
-            background-color: {background_color};
-            color: {text_color};
-        }}
-        .stApp {{
-            background-color: {background_color};
-            color: {text_color};
-        }}
-    </style>
-    """,
-    unsafe_allow_html=True
-)
+plot_theme = "plotly_dark" if dark_mode else "plotly_white"
 
 # Multi-Stock Selection
 selected_companies = st.multiselect("Select Companies", list(companies.keys()), default=["Apple (AAPL)"])
@@ -73,10 +50,10 @@ if st.button("Fetch Stock Data"):
 
         if "Time Series (5min)" in stock_data:
             df = pd.DataFrame.from_dict(stock_data["Time Series (5min)"], orient="index")
-            df = df.astype(float)  # Convert values to float
-            df.index = pd.to_datetime(df.index)  # Convert index to datetime
-            df = df.sort_index()  # Sort the data
-            df["Company"] = company  # Add company name for multi-stock comparison
+            df = df.astype(float)
+            df.index = pd.to_datetime(df.index)
+            df = df.sort_index()
+            df["Company"] = company
             df.columns = ["Open", "High", "Low", "Close", "Volume", "Company"]
             all_stock_data[company] = df
         else:
@@ -85,6 +62,16 @@ if st.button("Fetch Stock Data"):
     # Combine all stocks into one DataFrame
     if all_stock_data:
         combined_df = pd.concat(all_stock_data.values())
+
+        for company, df in all_stock_data.items():
+            st.subheader(f"📊 {company} Stock Details")
+            starting_price = df.iloc[0]["Open"]
+            current_price = df.iloc[-1]["Close"]
+            highest_price = df["High"].max()
+
+            st.metric(label="Starting Price", value=f"${starting_price:.2f}")
+            st.metric(label="Current Price", value=f"${current_price:.2f}")
+            st.metric(label="Highest Price of the Day", value=f"${highest_price:.2f}")
 
         # Plot all selected stocks
         fig = px.line(
@@ -97,4 +84,3 @@ if st.button("Fetch Stock Data"):
             template=plot_theme
         )
         st.plotly_chart(fig)
-

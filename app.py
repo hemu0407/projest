@@ -5,7 +5,7 @@ import plotly.express as px
 import numpy as np
 
 # Alpha Vantage API Key
-API_KEY = "YOUR_ALPHA_VANTAGE_API_KEY"
+API_KEY = "FG9COB3AYV3V9FVK"
 
 # List of companies and their stock symbols
 companies = {

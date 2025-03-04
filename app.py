@@ -35,6 +35,21 @@ if "dark_mode" not in st.session_state:
 dark_mode = st.toggle("🌗 Toggle Dark/Light Mode", value=st.session_state.dark_mode)
 st.session_state.dark_mode = dark_mode
 plot_theme = "plotly_dark" if st.session_state.dark_mode else "plotly_white"
+st.markdown(
+    """
+    <style>
+        body {
+            background-color: #0e1117 if dark_mode else #ffffff;
+            color: #ffffff if dark_mode else #000000;
+        }
+        .stButton>button {
+            background-color: #1f77b4 if dark_mode else #4caf50;
+            color: white;
+        }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
 
 # Company selection
 selected_company = st.selectbox("Select a Company", list(companies.keys()))

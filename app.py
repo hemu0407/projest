@@ -81,6 +81,10 @@ if st.session_state.stock_data is not None:
     # Ask for investment amount
     num_stocks = st.number_input("Enter number of stocks to buy", min_value=1, step=1)
 
+    # Calculate and display grand total
+    grand_total = num_stocks * current_price
+    st.write(f"💰 **Grand Total Investment:** ${grand_total:.2f}")
+
     # Get Results button
     if st.button("Get Results"):
         total_investment = num_stocks * current_price
@@ -94,11 +98,19 @@ if st.session_state.stock_data is not None:
         model = SVR(kernel="rbf", C=100, gamma=0.1, epsilon=0.1)
         model.fit(X, y.ravel())
 
-        # Predict future price
-        future_time = np.array([[X[-1][0] + 10]])  # Predict 10 steps ahead
-        predicted_price = model.predict(future_time)[0]
+        # Predict future prices for the next 10 intervals
+        future_time = np.array([[X[-1][0] + i] for i in range(1, 11)])
+        future_predictions = model.predict(future_time)
+
+        # Future trend graph
+        future_dates = pd.date_range(start=df.index[-1], periods=10, freq="5min")
+        df_future = pd.DataFrame({"Date": future_dates, "Predicted Price": future_predictions})
+
+        fig_future = px.line(df_future, x="Date", y="Predicted Price", title="🔮 Predicted Future Trend", template=plot_theme)
+        st.plotly_chart(fig_future)
 
         # Calculate profit/loss percentage
+        predicted_price = future_predictions[-1]  # Take last predicted price
         profit_loss_percentage = ((predicted_price - current_price) / current_price) * 100
         potential_profit_loss = num_stocks * (predicted_price - current_price)
 
@@ -107,7 +119,7 @@ if st.session_state.stock_data is not None:
         if profit_loss_percentage > 0:
             st.success(f"✅ **Good Investment!** Estimated profit: **{profit_loss_percentage:.2f}%**")
             st.write(f"💰 **Projected Profit:** ${potential_profit_loss:.2f}")
-            st.write(f"📌 **Best Time to Sell:** In {10} time intervals")
+            st.write(f"📌 **Best Time to Sell:** In 10 intervals")
         else:
             st.error(f"❌ **Don't Invest!** Estimated loss: **{abs(profit_loss_percentage):.2f}%**")
             st.write(f"⚠️ **Potential Loss:** ${abs(potential_profit_loss):.2f}")

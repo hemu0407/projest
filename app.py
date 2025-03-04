@@ -71,3 +71,4 @@ if page == "📊 Stock Market Dashboard":
             else:
                 st.error(f"📉 *Loss:* ${abs(profit_loss):.2f} ({abs(profit_loss_percentage):.2f}%)")
                 st.warning(f"💡 *Recommendation:* It might not be the best time to buy. Consider waiting for a better price.")
+                

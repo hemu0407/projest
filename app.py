@@ -4,7 +4,7 @@ import pandas as pd
 import plotly.express as px
 
 # Alpha Vantage API Key
-API_KEY = "QVQRLHHR3IS7BLSS"
+API_KEY = "EY0BHX91K5UY3W6Q"
 
 # List of companies and their stock symbols
 companies = {

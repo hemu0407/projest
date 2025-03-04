@@ -2,9 +2,28 @@ import streamlit as st
 import requests
 import pandas as pd
 import plotly.express as px
+from sklearn.svm import SVR
+import numpy as np
 
 # Set Page Configuration (MUST be first)
 st.set_page_config(page_title="Stock Market App", layout="wide")
+
+# API Key for Alpha Vantage
+API_KEY = "MPPUU3T1XG48JIOK"
+
+# List of companies and their stock symbols
+companies = {
+    "Apple (AAPL)": "AAPL",
+    "Microsoft (MSFT)": "MSFT",
+    "Google (GOOGL)": "GOOGL",
+    "Amazon (AMZN)": "AMZN",
+    "Tesla (TSLA)": "TSLA",
+    "Meta (META)": "META",
+    "Netflix (NFLX)": "NFLX",
+    "Nvidia (NVDA)": "NVDA",
+    "IBM (IBM)": "IBM",
+    "Intel (INTC)": "INTC"
+}
 
 # Sidebar Toggle Button (☰) using JavaScript
 sidebar_toggle_js = """
@@ -46,42 +65,6 @@ st.markdown(
 st.sidebar.title("📌 Navigation")
 page = st.sidebar.radio("Go to", ["🏠 Home", "📊 Stock Market Dashboard", "🚨 Price Alert", "🔄 Stock Comparison"])
 
-# Dummy Home Page
-if page == "🏠 Home":
-    st.image("https://source.unsplash.com/featured/?stocks,market", use_column_width=True)
-
-# Other Pages...
-elif page == "📊 Stock Market Dashboard":
-    st.title("📊 Stock Market Dashboard")
-
-# Alpha Vantage API Key
-API_KEY = "3N5V8TAO9YIDT59Q"
-
-# List of companies and their stock symbols
-companies = {
-    "Apple (AAPL)": "AAPL",
-    "Microsoft (MSFT)": "MSFT",
-    "Google (GOOGL)": "GOOGL",
-    "Amazon (AMZN)": "AMZN",
-    "Tesla (TSLA)": "TSLA",
-    "Meta (META)": "META",
-    "Netflix (NFLX)": "NFLX",
-    "Nvidia (NVDA)": "NVDA",
-    "IBM (IBM)": "IBM",
-    "Intel (INTC)": "INTC"
-}
-
-# Sidebar Navigation
-st.sidebar.title("📌 Navigation")
-page = st.sidebar.radio("Go to", ["🏠 Home", "📊 Stock Market Dashboard", "🚨 Price Alert", "🔄 Stock Comparison"])
-
-# Function to fetch stock data
-def get_stock_data(symbol):
-    url = f"https://www.alphavantage.co/query?function=TIME_SERIES_INTRADAY&symbol={symbol}&interval=5min&apikey={API_KEY}&outputsize=full"
-    response = requests.get(url)
-    data = response.json()
-    return data
-
 # Home Page
 if page == "🏠 Home":
     st.image("https://source.unsplash.com/featured/?stocks,market", use_column_width=True)
@@ -90,9 +73,17 @@ if page == "🏠 Home":
 elif page == "📊 Stock Market Dashboard":
     st.title("📊 Stock Market Dashboard")
     
+    # Select Company
     selected_company = st.selectbox("📌 Select a Company", list(companies.keys()))
-    num_stocks = st.number_input("🛒 Enter number of stocks to buy", min_value=1, step=1)
 
+    # Fetch Stock Data Function
+    def get_stock_data(symbol):
+        url = f"https://www.alphavantage.co/query?function=TIME_SERIES_INTRADAY&symbol={symbol}&interval=5min&apikey={API_KEY}&outputsize=full"
+        response = requests.get(url)
+        data = response.json()
+        return data
+
+    # Fetch Data Button
     if st.button("🔍 Fetch Stock Data"):
         stock_data = get_stock_data(companies[selected_company])
 
@@ -102,48 +93,73 @@ elif page == "📊 Stock Market Dashboard":
             df.index = pd.to_datetime(df.index)
             df = df.sort_index()
             df.columns = ["Open", "High", "Low", "Close", "Volume"]
+            st.session_state.stock_data = df  # Store data in session state
+        else:
+            st.warning(f"⚠ Could not fetch data for {selected_company}. API limit may have been reached!")
 
-            current_price = df["Close"].iloc[-1]
-            total_investment = num_stocks * current_price
+    # Display Stock Data
+    if "stock_data" in st.session_state:
+        df = st.session_state.stock_data
+        current_price = df["Close"].iloc[-1]
+        highest_price = df["High"].max()
+        starting_price = df["Open"].iloc[0]
 
-            st.success(f"💰 Current Price: ${current_price:.2f}")
-            st.info(f"📊 Total Investment: ${total_investment:.2f}")
+        st.subheader(f"📈 {selected_company} Stock Details")
+        st.info(f"💰 *Current Price:* ${current_price:.2f}")
+        st.success(f"📈 *Highest Price:* ${highest_price:.2f}")
+        st.warning(f"🔽 *Starting Price:* ${starting_price:.2f}")
 
-            fig = px.line(df, x=df.index, y="Close", title="📊 Intraday Stock Prices")
-            st.plotly_chart(fig)
+        # Intraday Graph
+        fig = px.line(df, x=df.index, y="Close", title="📊 Intraday Stock Prices", labels={"Close": "Stock Price"}, template="plotly_dark")
+        st.plotly_chart(fig)
 
-# Stock Price Alert
+        # Investment Calculator
+        num_stocks = st.number_input("🛒 Enter number of stocks to buy", min_value=1, step=1)
+        total_cost = num_stocks * current_price
+        st.info(f"💰 *Total Investment:* ${total_cost:.2f}")
+
+# Price Alert
 elif page == "🚨 Price Alert":
-    st.title("🚨 Set a Stock Price Alert")
+    st.title("🚨 Set Price Alert")
     
-    alert_company = st.selectbox("Select a Company", list(companies.keys()), key="alert_company")
-    alert_price = st.number_input("Enter Alert Price", min_value=0.0, step=0.1, format="%.2f")
-
-    if st.button("Set Alert"):
-        st.success(f"✅ Alert set for {alert_company} at ${alert_price:.2f}")
+    selected_company = st.selectbox("📌 Choose a Company for Alerts", list(companies.keys()))
+    alert_price = st.number_input("🔔 Enter Alert Price", min_value=0.0, format="%.2f")
+    
+    if st.button("✅ Set Alert"):
+        st.success(f"🚀 Alert set for {selected_company} at ${alert_price:.2f}")
 
 # Stock Comparison
 elif page == "🔄 Stock Comparison":
-    st.title("🔄 Compare Two Stocks")
+    st.title("🔄 Compare Stock Performance")
 
-    stock1 = st.selectbox("Select First Stock", list(companies.keys()), key="stock1")
-    stock2 = st.selectbox("Select Second Stock", list(companies.keys()), key="stock2")
+    # Select two stocks to compare
+    stock1 = st.selectbox("📌 Select First Company", list(companies.keys()), key="stock1")
+    stock2 = st.selectbox("📌 Select Second Company", list(companies.keys()), key="stock2")
 
-    if st.button("Compare Stocks"):
-        data1 = get_stock_data(companies[stock1])
-        data2 = get_stock_data(companies[stock2])
+    # Fetch Data for Both Stocks
+    if st.button("🔍 Compare Stocks"):
+        stock1_data = get_stock_data(companies[stock1])
+        stock2_data = get_stock_data(companies[stock2])
 
-        if "Time Series (5min)" in data1 and "Time Series (5min)" in data2:
-            df1 = pd.DataFrame.from_dict(data1["Time Series (5min)"], orient="index").astype(float)
-            df2 = pd.DataFrame.from_dict(data2["Time Series (5min)"], orient="index").astype(float)
-
+        if "Time Series (5min)" in stock1_data and "Time Series (5min)" in stock2_data:
+            df1 = pd.DataFrame.from_dict(stock1_data["Time Series (5min)"], orient="index").astype(float)
             df1.index = pd.to_datetime(df1.index)
-            df2.index = pd.to_datetime(df2.index)
-
+            df1 = df1.sort_index()
             df1.columns = ["Open", "High", "Low", "Close", "Volume"]
+
+            df2 = pd.DataFrame.from_dict(stock2_data["Time Series (5min)"], orient="index").astype(float)
+            df2.index = pd.to_datetime(df2.index)
+            df2 = df2.sort_index()
             df2.columns = ["Open", "High", "Low", "Close", "Volume"]
 
-            fig = px.line(title="Stock Price Comparison")
-            fig.add_scatter(x=df1.index, y=df1["Close"], mode="lines", name=stock1)
-            fig.add_scatter(x=df2.index, y=df2["Close"], mode="lines", name=stock2)
-            st.plotly_chart(fig)
+            # Create comparison plot
+            comparison_df = pd.DataFrame({
+                "Time": df1.index,
+                stock1: df1["Close"],
+                stock2: df2["Close"]
+            })
+            fig_compare = px.line(comparison_df, x="Time", y=[stock1, stock2], title="📊 Stock Price Comparison", template="plotly_dark")
+            st.plotly_chart(fig_compare)
+        else:
+            st.warning("⚠ Unable to fetch stock data for comparison.")
+

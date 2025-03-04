@@ -9,7 +9,7 @@ from sklearn.model_selection import train_test_split
 # Alpha Vantage API Key
 API_KEY = "CIGY6168CBD8UPYV"
 
-# List of stock symbols for intraday trading
+# Stock symbols
 companies = {
     "Apple (AAPL)": "AAPL",
     "Microsoft (MSFT)": "MSFT",
@@ -18,7 +18,7 @@ companies = {
     "Tesla (TSLA)": "TSLA",
 }
 
-# Store selections in session state to prevent resets
+# Store user selections persistently
 if "selected_company" not in st.session_state:
     st.session_state.selected_company = list(companies.keys())[0]
 
@@ -28,9 +28,9 @@ if "stocks_to_buy" not in st.session_state:
 st.set_page_config(page_title="Stock Predictor", layout="wide")
 st.title("📈 Stock Predictor - Intraday Analysis")
 
-# Select a Company (No Auto Reset)
+# Select a Company
 selected_company = st.selectbox("Select a Company", list(companies.keys()), index=list(companies.keys()).index(st.session_state.selected_company))
-st.session_state.selected_company = selected_company  # Store selection persistently
+st.session_state.selected_company = selected_company
 
 symbol = companies[selected_company]
 
@@ -66,10 +66,13 @@ if st.button("🔍 Fetch Stock Data"):
         fig = px.line(df, x=df.index, y="Close", title=f"📈 {selected_company} Intraday Trend")
         st.plotly_chart(fig)
 
-        # Stock selection slider (Persistent Value, starts as None)
-        stocks_to_buy = st.slider("Select the number of stocks to buy", min_value=1, max_value=1000, value=10, key="stocks_to_buy")
+        # Stock selection slider
+        stocks_to_buy = st.slider("Select the number of stocks to buy", min_value=1, max_value=1000, value=1, key="stocks_to_buy")
 
-        if stocks_to_buy:  # Only calculate after selection
+        # Only calculate if the user selects stocks (not defaulting to any value)
+        if "stocks_to_buy" in st.session_state and st.session_state.stocks_to_buy is not None:
+            stocks_to_buy = st.session_state.stocks_to_buy  # Get updated selection
+
             # Calculate Total Investment
             total_investment = stocks_to_buy * current_price
             st.info(f"💰 **Total Investment: ${total_investment:.2f}**")

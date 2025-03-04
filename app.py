@@ -2,16 +2,16 @@ import streamlit as st
 import requests
 import pandas as pd
 import plotly.express as px
-from sklearn.svm import SVR
 import numpy as np
+from sklearn.svm import SVR
 
-# Set Page Configuration (MUST be first)
+# Set Page Configuration
 st.set_page_config(page_title="Stock Market App", layout="wide")
 
-# API Key for Alpha Vantage
+# API Key
 API_KEY = "MPPUU3T1XG48JIOK"
 
-# List of companies and their stock symbols
+# Stock Symbols
 companies = {
     "Apple (AAPL)": "AAPL",
     "Microsoft (MSFT)": "MSFT",
@@ -25,8 +25,8 @@ companies = {
     "Intel (INTC)": "INTC"
 }
 
-# Sidebar Toggle Button (☰) using JavaScript
-sidebar_toggle_js = """
+# Sidebar Toggle JavaScript
+st.markdown("""
 <script>
     function toggleSidebar() {
         var sidebar = parent.document.querySelector("[data-testid='stSidebar']");
@@ -37,12 +37,9 @@ sidebar_toggle_js = """
         }
     }
 </script>
-"""
+""", unsafe_allow_html=True)
 
-# Inject JavaScript into the page
-st.markdown(sidebar_toggle_js, unsafe_allow_html=True)
-
-# Create a floating ☰ button for the sidebar
+# Floating ☰ Sidebar Button
 st.markdown(
     """
     <button onclick="toggleSidebar()" 
@@ -69,35 +66,31 @@ page = st.sidebar.radio("Go to", ["🏠 Home", "📊 Stock Market Dashboard", "�
 if page == "🏠 Home":
     st.image("https://source.unsplash.com/featured/?stocks,market", use_column_width=True)
 
+# Fetch Stock Data Function
+def get_stock_data(symbol):
+    url = f"https://www.alphavantage.co/query?function=TIME_SERIES_INTRADAY&symbol={symbol}&interval=5min&apikey={API_KEY}&outputsize=full"
+    response = requests.get(url)
+    return response.json()
+
 # Stock Market Dashboard
-elif page == "📊 Stock Market Dashboard":
+if page == "📊 Stock Market Dashboard":
     st.title("📊 Stock Market Dashboard")
     
-    # Select Company
     selected_company = st.selectbox("📌 Select a Company", list(companies.keys()))
 
-    # Fetch Stock Data Function
-    def get_stock_data(symbol):
-        url = f"https://www.alphavantage.co/query?function=TIME_SERIES_INTRADAY&symbol={symbol}&interval=5min&apikey={API_KEY}&outputsize=full"
-        response = requests.get(url)
-        data = response.json()
-        return data
-
-    # Fetch Data Button
     if st.button("🔍 Fetch Stock Data"):
         stock_data = get_stock_data(companies[selected_company])
 
         if "Time Series (5min)" in stock_data:
-            df = pd.DataFrame.from_dict(stock_data["Time Series (5min)"], orient="index")
-            df = df.astype(float)
+            df = pd.DataFrame.from_dict(stock_data["Time Series (5min)"], orient="index").astype(float)
             df.index = pd.to_datetime(df.index)
             df = df.sort_index()
             df.columns = ["Open", "High", "Low", "Close", "Volume"]
-            st.session_state.stock_data = df  # Store data in session state
+            st.session_state.stock_data = df
         else:
-            st.warning(f"⚠ Could not fetch data for {selected_company}. API limit may have been reached!")
+            st.warning(f"⚠ Could not fetch data for {selected_company}.")
 
-    # Display Stock Data
+    # Display Stock Data & Insights
     if "stock_data" in st.session_state:
         df = st.session_state.stock_data
         current_price = df["Close"].iloc[-1]
@@ -118,6 +111,29 @@ elif page == "📊 Stock Market Dashboard":
         total_cost = num_stocks * current_price
         st.info(f"💰 *Total Investment:* ${total_cost:.2f}")
 
+        # **🧠 Future Trend Prediction (SVR)**
+        st.subheader("📈 Future Stock Price Prediction")
+
+        df["Time"] = np.arange(len(df))
+        X = df[["Time"]].values
+        y = df["Close"].values
+
+        model = SVR(kernel="rbf", C=1e3, gamma=0.1)
+        model.fit(X, y)
+
+        future_times = np.arange(len(df) + 10).reshape(-1, 1)
+        future_prices = model.predict(future_times)
+
+        future_df = pd.DataFrame({"Time": future_times.flatten(), "Predicted Price": future_prices})
+        fig_pred = px.line(future_df, x="Time", y="Predicted Price", title="📈 Predicted Stock Prices (Next 10 Ticks)", template="plotly_dark")
+        st.plotly_chart(fig_pred)
+
+        # **📊 Historical Trend Analysis**
+        st.subheader("📊 Historical Performance")
+        st.metric(label="📉 Lowest Price", value=f"${df['Low'].min():.2f}")
+        st.metric(label="📈 Highest Price", value=f"${df['High'].max():.2f}")
+        st.metric(label="📊 Average Price", value=f"${df['Close'].mean():.2f}")
+
 # Price Alert
 elif page == "🚨 Price Alert":
     st.title("🚨 Set Price Alert")
@@ -132,11 +148,9 @@ elif page == "🚨 Price Alert":
 elif page == "🔄 Stock Comparison":
     st.title("🔄 Compare Stock Performance")
 
-    # Select two stocks to compare
     stock1 = st.selectbox("📌 Select First Company", list(companies.keys()), key="stock1")
     stock2 = st.selectbox("📌 Select Second Company", list(companies.keys()), key="stock2")
 
-    # Fetch Data for Both Stocks
     if st.button("🔍 Compare Stocks"):
         stock1_data = get_stock_data(companies[stock1])
         stock2_data = get_stock_data(companies[stock2])
@@ -152,7 +166,6 @@ elif page == "🔄 Stock Comparison":
             df2 = df2.sort_index()
             df2.columns = ["Open", "High", "Low", "Close", "Volume"]
 
-            # Create comparison plot
             comparison_df = pd.DataFrame({
                 "Time": df1.index,
                 stock1: df1["Close"],
@@ -162,4 +175,3 @@ elif page == "🔄 Stock Comparison":
             st.plotly_chart(fig_compare)
         else:
             st.warning("⚠ Unable to fetch stock data for comparison.")
-

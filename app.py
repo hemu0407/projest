@@ -31,7 +31,7 @@ def get_stock_data(symbol):
     response = requests.get(url)
     return response.json()
 
-# Initialize session state for alerts
+# Initialize session state
 if "alerts" not in st.session_state:
     st.session_state.alerts = []
 
@@ -44,7 +44,7 @@ if page == "🏠 Home":
     st.image("https://source.unsplash.com/featured/?stocks,market", use_column_width=True)
 
 # Stock Market Dashboard
-if page == "📊 Stock Market Dashboard":
+elif page == "📊 Stock Market Dashboard":
     st.title("📊 Stock Market Dashboard")
     
     selected_company = st.selectbox("📌 Select a Company", list(companies.keys()))
@@ -61,7 +61,6 @@ if page == "📊 Stock Market Dashboard":
         else:
             st.warning(f"⚠ Could not fetch data for {selected_company}.")
 
-    # Display Stock Data & Insights
     if "stock_data" in st.session_state:
         df = st.session_state.stock_data
         current_price = df["Close"].iloc[-1]
@@ -74,7 +73,8 @@ if page == "📊 Stock Market Dashboard":
         st.warning(f"🔽 Starting Price: ${starting_price:.2f}")
 
         # Intraday Graph
-        fig = px.line(df, x=df.index, y="Close", title="📊 Intraday Stock Prices", labels={"Close": "Stock Price"}, template="plotly_dark")
+        fig = px.line(df, x=df.index, y="Close", title="📊 Intraday Stock Prices", 
+                     labels={"Close": "Stock Price"}, template="plotly_dark")
         st.plotly_chart(fig)
 
         # Investment Calculator
@@ -84,33 +84,26 @@ if page == "📊 Stock Market Dashboard":
             total_cost = num_stocks * current_price
             st.info(f"💰 Total Investment: ${total_cost:.2f}")
 
-            # *📈 Future Trend Prediction (Moving Averages)*
+            # Future Trend Prediction
             st.subheader("📈 Future Stock Price Prediction (Moving Averages)")
-
-            # Filter data for the current day
             today = datetime.now().date()
             df_today = df[df.index.date == today]
 
-            # Check if the market is open
             if df_today.empty:
                 st.warning("⚠ Market is closed. No predictions available for today.")
             else:
-                # Calculate moving average
-                window_size = 10  # Adjust window size as needed
+                window_size = 10
                 df_today["Moving Avg"] = df_today["Close"].rolling(window=window_size).mean()
-
-                # Predict future prices using moving average
                 future_prices = df_today["Moving Avg"].iloc[-window_size:].values
                 future_times = pd.date_range(start=df_today.index[-1], periods=window_size + 1, freq="5T")[1:]
 
-                # Create future DataFrame
                 future_df = pd.DataFrame({"Time": future_times, "Predicted Price": future_prices})
-
-                # Plot the predicted prices
-                fig_pred = px.line(future_df, x="Time", y="Predicted Price", title="📈 Predicted Stock Prices (Next 10 Intervals)", template="plotly_dark")
+                fig_pred = px.line(future_df, x="Time", y="Predicted Price", 
+                                 title="📈 Predicted Stock Prices (Next 10 Intervals)", 
+                                 template="plotly_dark")
                 st.plotly_chart(fig_pred)
 
-                # Calculate Profit/Loss
+                # Profit/Loss Calculation
                 future_price = future_prices[-1]
                 future_value = num_stocks * future_price
                 profit_loss = future_value - total_cost
@@ -118,26 +111,24 @@ if page == "📊 Stock Market Dashboard":
 
                 if profit_loss > 0:
                     st.success(f"📈 Profit: ${profit_loss:.2f} ({profit_loss_percentage:.2f}%)")
-                    st.info(f"💡 Recommendation: Consider selling when the price reaches ${future_price:.2f} to maximize profit.")
+                    st.info(f"💡 Recommendation: Consider selling when price reaches ${future_price:.2f}")
                 else:
                     st.error(f"📉 Loss: ${abs(profit_loss):.2f} ({abs(profit_loss_percentage):.2f}%)")
-                    st.warning(f"💡 Recommendation: It might not be the best time to buy. Consider waiting for a better price.")
+                    st.warning("💡 Recommendation: Wait for better entry point")
 
-# Price Alert
+# Price Alert Section
 elif page == "🚨 Price Alert":
     st.title("🚨 Price Alert")
 
-    # Initialize session state for alerts if not already done
     if "alerts" not in st.session_state:
         st.session_state.alerts = []
 
     # Set Alert
     st.subheader("🔔 Set Price Alert")
-    selected_company = st.selectbox("📌 Choose a Company for Alerts", list(companies.keys()))
+    selected_company = st.selectbox("📌 Choose a Company", list(companies.keys()))
     alert_price = st.number_input("💰 Enter Alert Price", min_value=0.0, format="%.2f")
     
     if st.button("✅ Set Alert"):
-        # Add alert to session state
         st.session_state.alerts.append({
             "company": selected_company,
             "symbol": companies[selected_company],
@@ -145,14 +136,17 @@ elif page == "🚨 Price Alert":
         })
         st.success(f"🚀 Alert set for {selected_company} at ${alert_price:.2f}")
 
-    # Display Active Alerts
+    # Active Alerts
     st.subheader("📋 Active Alerts")
     if st.session_state.alerts:
         for i, alert in enumerate(st.session_state.alerts):
-            st.write(f"{i + 1}. {alert['company']} - Alert at ${alert['alert_price']:.2f}")
-            if st.button(f"❌ Clear Alert {i + 1}"):
-                st.session_state.alerts.pop(i)
-                st.session_state.rerun = True  # Trigger rerun
+            col1, col2 = st.columns([4,1])
+            with col1:
+                st.write(f"{i + 1}. {alert['company']} - Alert at ${alert['alert_price']:.2f}")
+            with col2:
+                if st.button(f"❌ Clear {i+1}"):
+                    st.session_state.alerts.pop(i)
+                    st.experimental_rerun()
     else:
         st.info("No active alerts.")
 
@@ -165,113 +159,101 @@ elif page == "🚨 Price Alert":
                 df = pd.DataFrame.from_dict(stock_data["Time Series (5min)"], orient="index").astype(float)
                 if "Close" in df.columns:
                     current_price = df["Close"].iloc[-1]
-
                     if current_price >= alert["alert_price"]:
-                        st.success(f"🚨 Alert triggered for {alert['company']}! Current price: ${current_price:.2f} (Target: ${alert['alert_price']:.2f})")
+                        st.success(f"🚨 {alert['company']} Alert Triggered! Current: ${current_price:.2f}")
                     else:
-                        st.info(f"⏳ {alert['company']} is at ${current_price:.2f}. Waiting to reach ${alert['alert_price']:.2f}.")
+                        st.info(f"⏳ {alert['company']} at ${current_price:.2f} (Target: ${alert['alert_price']:.2f})")
                 else:
-                    st.warning(f"⚠ The 'Close' column is missing in the data for {alert['company']}.")
+                    st.warning(f"⚠ Missing data for {alert['company']}")
             else:
-                st.warning(f"⚠ Could not fetch data for {alert['company']}.")
+                st.warning(f"⚠ Couldn't fetch data for {alert['company']}")
 
-    # Rerun the app if needed
-    if "rerun" in st.session_state and st.session_state.rerun:
-        st.session_state.rerun = False
-        if hasattr(st, "experimental_rerun"):  # Check if st.experimental_rerun is available
-            st.experimental_rerun()
-        elif hasattr(st, "rerun"):  # Check if st.rerun is available
-            st.rerun()
-        else:
-            st.warning("⚠ Rerun functionality is not available in your Streamlit version. Please upgrade Streamlit.")
-
-# Stock Comparison
+# Stock Comparison Section
 elif page == "🔄 Stock Comparison":
-    st.title("🔄 Compare Stock Performance")
+    st.title("🔄 Advanced Stock Comparison")
 
-    # Get list of companies for dropdowns
     company_list = list(companies.keys())
-
-    # First Stock Selection
+    
+    # Dynamic stock selection
     stock1 = st.selectbox("📌 Select First Company", company_list, key="stock1")
-
-    # Second Stock Selection (exclude the first selected stock)
-    stock2_options = [company for company in company_list if company != stock1]
-    stock2 = st.selectbox("📌 Select Second Company", stock2_options, key="stock2")
+    stock2 = st.selectbox("📌 Select Second Company", 
+                         [c for c in company_list if c != stock1], 
+                         key="stock2")
 
     if st.button("🔍 Compare Stocks"):
         stock1_data = get_stock_data(companies[stock1])
         stock2_data = get_stock_data(companies[stock2])
 
         if "Time Series (5min)" in stock1_data and "Time Series (5min)" in stock2_data:
-            # Process Stock 1 Data
-            df1 = pd.DataFrame.from_dict(stock1_data["Time Series (5min)"], orient="index").astype(float)
+            # Process data
+            df1 = pd.DataFrame(stock1_data["Time Series (5min)"]).T.astype(float)
+            df2 = pd.DataFrame(stock2_data["Time Series (5min)"]).T.astype(float)
             df1.index = pd.to_datetime(df1.index)
-            df1 = df1.sort_index()
-            df1.columns = ["Open", "High", "Low", "Close", "Volume"]
-
-            # Process Stock 2 Data
-            df2 = pd.DataFrame.from_dict(stock2_data["Time Series (5min)"], orient="index").astype(float)
             df2.index = pd.to_datetime(df2.index)
-            df2 = df2.sort_index()
-            df2.columns = ["Open", "High", "Low", "Close", "Volume"]
-
-            # Merge Data for Comparison
+            
+            # Price Comparison
             comparison_df = pd.DataFrame({
-                "Time": df1.index,
-                stock1: df1["Close"],
-                stock2: df2["Close"]
-            })
+                stock1: df1["4. close"],
+                stock2: df2["4. close"]
+            }).sort_index()
 
-            # Plot Dual-Axis Line Chart
-            st.subheader("📊 Stock Price Comparison")
-            fig_compare = px.line(comparison_df, x="Time", y=[stock1, stock2], title="📊 Stock Price Comparison", template="plotly_dark")
-            st.plotly_chart(fig_compare)
+            st.subheader("📊 Price Trend Comparison")
+            fig = px.line(comparison_df, template="plotly_dark", 
+                         title="Hourly Price Movement Comparison")
+            st.plotly_chart(fig)
 
+            # Advanced Analysis
+            st.subheader("📈 Deep Analysis")
+            
             # Correlation Analysis
-            st.subheader("📈 Correlation Analysis")
-            correlation = df1["Close"].corr(df2["Close"])
-            st.info(f"📊 *Correlation between {stock1} and {stock2}:* {correlation:.2f}")
+            correlation = comparison_df[stock1].corr(comparison_df[stock2])
+            st.info(f"**Correlation Coefficient:** {correlation:.2f}")
+            
+            if correlation > 0.8:
+                st.write("💡 These stocks move **strongly together** - similar sector exposure")
+            elif correlation < -0.8:
+                st.write("💡 These stocks move **oppositely** - potential hedging opportunity")
+            else:
+                st.write("💡 **No strong correlation** - diversified exposure")
 
-            # Scatter Plot for Correlation
-            scatter_df = pd.DataFrame({stock1: df1["Close"], stock2: df2["Close"]})
-            fig_scatter = px.scatter(scatter_df, x=stock1, y=stock2, title="📈 Scatter Plot of Stock Prices", template="plotly_dark")
-            st.plotly_chart(fig_scatter)
+            # Volatility Analysis
+            volatility = pd.DataFrame({
+                "Stock": [stock1, stock2],
+                "Volatility": [
+                    comparison_df[stock1].pct_change().std() * 100,
+                    comparison_df[stock2].pct_change().std() * 100
+                ]
+            })
+            
+            st.subheader("📉 Volatility Comparison")
+            fig_vol = px.bar(volatility, x="Stock", y="Volatility", 
+                            color="Stock", template="plotly_dark",
+                            title="Price Volatility (Standard Deviation of Daily Returns)")
+            st.plotly_chart(fig_vol)
 
-            # Percentage Change Comparison
-            st.subheader("📉 Percentage Change Comparison")
-            df1["Pct Change"] = df1["Close"].pct_change() * 100
-            df2["Pct Change"] = df2["Close"].pct_change() * 100
+            # Momentum Analysis
+            st.subheader("🚀 Momentum Analysis")
+            momentum = pd.DataFrame({
+                "Stock": [stock1, stock2],
+                "Last Hour Change": [
+                    (comparison_df[stock1][-1] - comparison_df[stock1][-6])/comparison_df[stock1][-6] * 100,
+                    (comparison_df[stock2][-1] - comparison_df[stock2][-6])/comparison_df[stock2][-6] * 100
+                ]
+            })
+            
+            fig_momentum = px.bar(momentum, x="Stock", y="Last Hour Change", 
+                                 color="Stock", template="plotly_dark",
+                                 title="Percentage Change in Last Hour")
+            st.plotly_chart(fig_momentum)
 
-            fig_pct_change = px.line(
-                pd.DataFrame({
-                    "Time": df1.index,
-                    f"{stock1} % Change": df1["Pct Change"],
-                    f"{stock2} % Change": df2["Pct Change"]
-                }),
-                x="Time",
-                y=[f"{stock1} % Change", f"{stock2} % Change"],
-                title="📉 Percentage Change Over Time",
-                template="plotly_dark"
-            )
-            st.plotly_chart(fig_pct_change)
-
-            # Volatility Comparison
-            st.subheader("📊 Volatility Comparison")
-            volatility_stock1 = df1["Close"].std()
-            volatility_stock2 = df2["Close"].std()
-            st.info(f"📈 *Volatility of {stock1}:* {volatility_stock1:.2f}")
-            st.info(f"📈 *Volatility of {stock2}:* {volatility_stock2:.2f}")
-
-            # Volatility Bar Chart
-            fig_volatility = px.bar(
-                x=[stock1, stock2],
-                y=[volatility_stock1, volatility_stock2],
-                labels={"x": "Stock", "y": "Volatility"},
-                title="📊 Volatility Comparison",
-                template="plotly_dark"
-            )
-            st.plotly_chart(fig_volatility)
+            # Predictive Insights
+            st.subheader("🔮 Predictive Insights")
+            if correlation > 0.7 and volatility[volatility['Stock'] == stock1]['Volatility'].values[0] > 3:
+                st.success(f"**Trading Opportunity:** Consider paired trading strategy for {stock1} and {stock2}")
+            elif momentum["Last Hour Change"].max() > 2:
+                st.info(f"**Short-Term Play:** {momentum.loc[momentum['Last Hour Change'].idxmax()]['Stock']} showing strong momentum")
+            else:
+                st.warning("**Neutral Outlook:** No strong signals detected - maintain current positions")
 
         else:
-            st.warning("⚠ Unable to fetch stock data for comparison.")
+            st.warning("⚠ Failed to fetch comparison data")

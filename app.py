@@ -36,6 +36,46 @@ if "alerts" not in st.session_state:
     st.session_state.alerts = []
 
 # Sidebar Navigation
+# Sidebar Navigation
+st.sidebar.title("📌 Navigation")
+st.sidebar.markdown("---")  # Adds a horizontal line for separation
+
+# Sidebar Sections
+st.sidebar.markdown("### 📊 Dashboard")
+page = st.sidebar.radio("", ["🏠 Home", "📊 Stock Market Dashboard", "🚨 Price Alert", "🔄 Stock Comparison"])
+
+# Additional Information Section
+st.sidebar.markdown("---")
+st.sidebar.markdown("### ℹ️ Information")
+st.sidebar.info("""
+This app provides real-time stock market data, price alerts, and advanced stock comparison tools. 
+Use the navigation above to explore different features.
+""")
+
+# API Information Section
+st.sidebar.markdown("---")
+st.sidebar.markdown("### 🔑 API Information")
+st.sidebar.info("""
+Data is fetched using the Alpha Vantage API. 
+For more details, visit [Alpha Vantage](https://www.alphavantage.co/).
+""")
+
+# Contact Information Section
+st.sidebar.markdown("---")
+st.sidebar.markdown("### 📧 Contact")
+st.sidebar.info("""
+For any queries or feedback, please contact us at:
+- **Email:** support@stockmarketapp.com
+- **Phone:** +1 (123) 456-7890
+""")
+
+# Footer Section
+st.sidebar.markdown("---")
+st.sidebar.markdown("### 📅 Last Updated")
+st.sidebar.info("""
+**Date:** 2023-10-01  
+**Version:** 1.0.0
+""")
 st.sidebar.title("📌 Navigation")
 page = st.sidebar.radio("Go to", ["🏠 Home", "📊 Stock Market Dashboard", "🚨 Price Alert", "🔄 Stock Comparison"])
 

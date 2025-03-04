@@ -7,7 +7,7 @@ from sklearn.svm import SVR
 from sklearn.model_selection import train_test_split
 
 # Alpha Vantage API Key
-API_KEY = "EY0BHX91K5UY3W6Q"
+API_KEY = "CIGY6168CBD8UPYV"
 
 # List of stock symbols for intraday trading
 companies = {

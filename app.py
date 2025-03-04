@@ -35,6 +35,9 @@ def get_stock_data(symbol):
 if "alerts" not in st.session_state:
     st.session_state.alerts = []
 
+if "page" not in st.session_state:
+    st.session_state.page = "Home"
+
 # Sidebar Navigation
 st.sidebar.title("📌 Navigation")
 st.sidebar.markdown("---")  # Adds a horizontal line for separation
@@ -65,19 +68,23 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-# Sidebar Sections
-def create_sidebar_section(title, icon):
+# Function to create a clickable sidebar section
+def create_sidebar_section(title, icon, page_name):
+    if st.session_state.page == page_name:
+        active_class = "active"
+    else:
+        active_class = ""
     return f"""
-    <div class="sidebar-section" onclick="window.location.href='#{title.replace(' ', '-').lower()}'">
+    <div class="sidebar-section {active_class}" onclick="window.location.href='?page={page_name}'">
         {icon} {title}
     </div>
     """
 
 # Render sidebar sections
-st.sidebar.markdown(create_sidebar_section("Home", "🏠"), unsafe_allow_html=True)
-st.sidebar.markdown(create_sidebar_section("Stock Market Dashboard", "📊"), unsafe_allow_html=True)
-st.sidebar.markdown(create_sidebar_section("Price Alert", "🚨"), unsafe_allow_html=True)
-st.sidebar.markdown(create_sidebar_section("Stock Comparison", "🔄"), unsafe_allow_html=True)
+st.sidebar.markdown(create_sidebar_section("Home", "🏠", "Home"), unsafe_allow_html=True)
+st.sidebar.markdown(create_sidebar_section("Stock Market Dashboard", "📊", "Stock Market Dashboard"), unsafe_allow_html=True)
+st.sidebar.markdown(create_sidebar_section("Price Alert", "🚨", "Price Alert"), unsafe_allow_html=True)
+st.sidebar.markdown(create_sidebar_section("Stock Comparison", "🔄", "Stock Comparison"), unsafe_allow_html=True)
 
 # Add a divider
 st.sidebar.markdown("---")
@@ -115,12 +122,6 @@ st.sidebar.info("""
 """)
 
 # Home Page
-if st.sidebar.button("🏠 Home"):
-    st.session_state.page = "Home"
-
-if "page" not in st.session_state:
-    st.session_state.page = "Home"
-
 if st.session_state.page == "Home":
     st.title("🏠 Home")
     st.image("https://source.unsplash.com/featured/?stocks,market", use_column_width=True)

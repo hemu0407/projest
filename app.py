@@ -3,22 +3,8 @@ import requests
 import pandas as pd
 import plotly.express as px
 
-# Alpha Vantage API Key
-API_KEY = "3N5V8TAO9YIDT59Q"
-
-# List of companies and their stock symbols
-companies = {
-    "Apple (AAPL)": "AAPL",
-    "Microsoft (MSFT)": "MSFT",
-    "Google (GOOGL)": "GOOGL",
-    "Amazon (AMZN)": "AMZN",
-    "Tesla (TSLA)": "TSLA",
-    "Meta (META)": "META",
-    "Netflix (NFLX)": "NFLX",
-    "Nvidia (NVDA)": "NVDA",
-    "IBM (IBM)": "IBM",
-    "Intel (INTC)": "INTC"
-}
+# Set Page Configuration (MUST be first)
+st.set_page_config(page_title="Stock Market App", layout="wide")
 
 # JavaScript for Sidebar Toggle
 toggle_sidebar_script = """
@@ -38,8 +24,22 @@ toggle_sidebar_script = """
 st.markdown(toggle_sidebar_script, unsafe_allow_html=True)
 st.markdown('<button onclick="toggleSidebar()" style="position:fixed; top:10px; left:10px; background:#333; color:white; border:none; padding:10px 15px; cursor:pointer;">☰</button>', unsafe_allow_html=True)
 
-# Streamlit Page Config
-st.set_page_config(page_title="Stock Market App", layout="wide")
+# Alpha Vantage API Key
+API_KEY = "3N5V8TAO9YIDT59Q"
+
+# List of companies and their stock symbols
+companies = {
+    "Apple (AAPL)": "AAPL",
+    "Microsoft (MSFT)": "MSFT",
+    "Google (GOOGL)": "GOOGL",
+    "Amazon (AMZN)": "AMZN",
+    "Tesla (TSLA)": "TSLA",
+    "Meta (META)": "META",
+    "Netflix (NFLX)": "NFLX",
+    "Nvidia (NVDA)": "NVDA",
+    "IBM (IBM)": "IBM",
+    "Intel (INTC)": "INTC"
+}
 
 # Sidebar Navigation
 st.sidebar.title("📌 Navigation")

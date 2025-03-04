@@ -2,8 +2,6 @@ import streamlit as st
 import requests
 import pandas as pd
 import plotly.express as px
-from sklearn.svm import SVR
-import numpy as np
 
 # Alpha Vantage API Key
 API_KEY = "3N5V8TAO9YIDT59Q"
@@ -22,16 +20,30 @@ companies = {
     "Intel (INTC)": "INTC"
 }
 
-# Streamlit UI Configuration
+# JavaScript for Sidebar Toggle
+toggle_sidebar_script = """
+<script>
+    function toggleSidebar() {
+        var sidebar = parent.document.querySelector("[data-testid='stSidebar']");
+        if (sidebar.style.display === "none") {
+            sidebar.style.display = "block";
+        } else {
+            sidebar.style.display = "none";
+        }
+    }
+</script>
+"""
+
+# Inject Sidebar Toggle Button
+st.markdown(toggle_sidebar_script, unsafe_allow_html=True)
+st.markdown('<button onclick="toggleSidebar()" style="position:fixed; top:10px; left:10px; background:#333; color:white; border:none; padding:10px 15px; cursor:pointer;">☰</button>', unsafe_allow_html=True)
+
+# Streamlit Page Config
 st.set_page_config(page_title="Stock Market App", layout="wide")
 
 # Sidebar Navigation
 st.sidebar.title("📌 Navigation")
 page = st.sidebar.radio("Go to", ["🏠 Home", "📊 Stock Market Dashboard", "🚨 Price Alert", "🔄 Stock Comparison"])
-
-# Home Page
-if page == "🏠 Home":
-    st.image("https://source.unsplash.com/featured/?stocks,market", use_column_width=True)
 
 # Function to fetch stock data
 def get_stock_data(symbol):
@@ -40,8 +52,12 @@ def get_stock_data(symbol):
     data = response.json()
     return data
 
+# Home Page
+if page == "🏠 Home":
+    st.image("https://source.unsplash.com/featured/?stocks,market", use_column_width=True)
+
 # Stock Market Dashboard
-if page == "📊 Stock Market Dashboard":
+elif page == "📊 Stock Market Dashboard":
     st.title("📊 Stock Market Dashboard")
     
     selected_company = st.selectbox("📌 Select a Company", list(companies.keys()))

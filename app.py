@@ -1,7 +1,7 @@
 import streamlit as st
 import requests
 import pandas as pd
-import time
+import plotly.express as px
 
 # Set Page Configuration
 st.set_page_config(page_title="Stock Market App", layout="wide")
@@ -50,6 +50,9 @@ if page == "📊 Stock Market Dashboard":
     if st.button("🔍 Fetch Stock Data"):
         stock_data = get_stock_data(companies[selected_company])
 
+        # Debug: Print API response
+        st.write("API Response:", stock_data)
+
         if "Time Series (5min)" in stock_data:
             df = pd.DataFrame.from_dict(stock_data["Time Series (5min)"], orient="index").astype(float)
             df.index = pd.to_datetime(df.index)
@@ -57,23 +60,28 @@ if page == "📊 Stock Market Dashboard":
             df.columns = ["Open", "High", "Low", "Close", "Volume"]
             st.session_state.stock_data = df
         else:
-            st.warning(f"⚠ Could not fetch data for {selected_company}.")
+            st.warning(f"⚠ Could not fetch data for {selected_company}. Please check the API response.")
 
     # Display Stock Data & Insights
     if "stock_data" in st.session_state:
         df = st.session_state.stock_data
-        current_price = df["Close"].iloc[-1]
-        highest_price = df["High"].max()
-        starting_price = df["Open"].iloc[0]
 
-        st.subheader(f"📈 {selected_company} Stock Details")
-        st.info(f"💰 *Current Price:* ${current_price:.2f}")
-        st.success(f"📈 *Highest Price:* ${highest_price:.2f}")
-        st.warning(f"🔽 *Starting Price:* ${starting_price:.2f}")
+        # Check if "Close" column exists
+        if "Close" in df.columns:
+            current_price = df["Close"].iloc[-1]
+            highest_price = df["High"].max()
+            starting_price = df["Open"].iloc[0]
 
-        # Intraday Graph
-        fig = px.line(df, x=df.index, y="Close", title="📊 Intraday Stock Prices", labels={"Close": "Stock Price"}, template="plotly_dark")
-        st.plotly_chart(fig)
+            st.subheader(f"📈 {selected_company} Stock Details")
+            st.info(f"💰 *Current Price:* ${current_price:.2f}")
+            st.success(f"📈 *Highest Price:* ${highest_price:.2f}")
+            st.warning(f"🔽 *Starting Price:* ${starting_price:.2f}")
+
+            # Intraday Graph
+            fig = px.line(df, x=df.index, y="Close", title="📊 Intraday Stock Prices", labels={"Close": "Stock Price"}, template="plotly_dark")
+            st.plotly_chart(fig)
+        else:
+            st.error("⚠ The 'Close' column is missing in the data. Please check the API response.")
 
 # Price Alert
 elif page == "🚨 Price Alert":
@@ -111,12 +119,15 @@ elif page == "🚨 Price Alert":
             stock_data = get_stock_data(alert["symbol"])
             if "Time Series (5min)" in stock_data:
                 df = pd.DataFrame.from_dict(stock_data["Time Series (5min)"], orient="index").astype(float)
-                current_price = df["Close"].iloc[-1]
+                if "Close" in df.columns:
+                    current_price = df["Close"].iloc[-1]
 
-                if current_price >= alert["alert_price"]:
-                    st.success(f"🚨 Alert triggered for {alert['company']}! Current price: ${current_price:.2f} (Target: ${alert['alert_price']:.2f})")
+                    if current_price >= alert["alert_price"]:
+                        st.success(f"🚨 Alert triggered for {alert['company']}! Current price: ${current_price:.2f} (Target: ${alert['alert_price']:.2f})")
+                    else:
+                        st.info(f"⏳ {alert['company']} is at ${current_price:.2f}. Waiting to reach ${alert['alert_price']:.2f}.")
                 else:
-                    st.info(f"⏳ {alert['company']} is at ${current_price:.2f}. Waiting to reach ${alert['alert_price']:.2f}.")
+                    st.warning(f"⚠ The 'Close' column is missing in the data for {alert['company']}.")
             else:
                 st.warning(f"⚠ Could not fetch data for {alert['company']}.")
 

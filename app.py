@@ -5,7 +5,7 @@ import plotly.express as px
 import numpy as np
 
 # Alpha Vantage API Key
-API_KEY = "FG9COB3AYV3V9FVK"
+API_KEY = "YOUR_ALPHA_VANTAGE_API_KEY"
 
 # List of companies and their stock symbols
 companies = {
@@ -66,6 +66,20 @@ if st.button("Fetch Stock Data"):
                       labels={"value": "Stock Price", "index": "Date"},
                       template="plotly_dark")
         st.plotly_chart(fig)
+
+        # Calculate Buy/Sell percentages based on trend
+        recent_trend = df["SMA_10"].pct_change().dropna()  # Calculate % change
+        buy_percentage = max(0, round(recent_trend.iloc[-1] * 100, 2))
+        sell_percentage = max(0, round(-recent_trend.iloc[-1] * 100, 2))
+
+        # Display Buy/Sell buttons
+        col1, col2 = st.columns(2)
+        with col1:
+            st.markdown(f'<button style="background-color:green; color:white; width:100%; padding:10px; font-size:16px; border:none; border-radius:5px;">'
+                        f'Buy {buy_percentage}%</button>', unsafe_allow_html=True)
+        with col2:
+            st.markdown(f'<button style="background-color:red; color:white; width:100%; padding:10px; font-size:16px; border:none; border-radius:5px;">'
+                        f'Sell {sell_percentage}%</button>', unsafe_allow_html=True)
 
         # Simple Investment Advice
         if df["SMA_10"].iloc[-1] > df["SMA_10"].iloc[-2]:  # If SMA is rising

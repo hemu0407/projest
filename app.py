@@ -22,9 +22,6 @@ companies = {
 if "selected_company" not in st.session_state:
     st.session_state.selected_company = list(companies.keys())[0]
 
-if "stocks_to_buy" not in st.session_state:
-    st.session_state.stocks_to_buy = None  # Set to None initially
-
 st.set_page_config(page_title="Stock Predictor", layout="wide")
 st.title("📈 Stock Predictor - Intraday Analysis")
 
@@ -66,13 +63,11 @@ if st.button("🔍 Fetch Stock Data"):
         fig = px.line(df, x=df.index, y="Close", title=f"📈 {selected_company} Intraday Trend")
         st.plotly_chart(fig)
 
-        # Stock selection slider
-        stocks_to_buy = st.slider("Select the number of stocks to buy", min_value=1, max_value=1000, value=1, key="stocks_to_buy")
+        # User enters number of stocks
+        stocks_to_buy = st.number_input("Enter the number of stocks to buy:", min_value=1, max_value=1000, step=1, format="%d")
 
-        # Only calculate if the user selects stocks (not defaulting to any value)
-        if "stocks_to_buy" in st.session_state and st.session_state.stocks_to_buy is not None:
-            stocks_to_buy = st.session_state.stocks_to_buy  # Get updated selection
-
+        # Calculate only if input is valid
+        if stocks_to_buy > 0:
             # Calculate Total Investment
             total_investment = stocks_to_buy * current_price
             st.info(f"💰 **Total Investment: ${total_investment:.2f}**")

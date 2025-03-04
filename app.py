@@ -203,57 +203,70 @@ elif page == "🔄 Stock Comparison":
             st.plotly_chart(fig)
 
             # Advanced Analysis
-            st.subheader("📈 Deep Analysis")
-            
-            # Correlation Analysis
-            correlation = comparison_df[stock1].corr(comparison_df[stock2])
-            st.info(f"**Correlation Coefficient:** {correlation:.2f}")
-            
-            if correlation > 0.8:
-                st.write("💡 These stocks move **strongly together** - similar sector exposure")
-            elif correlation < -0.8:
-                st.write("💡 These stocks move **oppositely** - potential hedging opportunity")
-            else:
-                st.write("💡 **No strong correlation** - diversified exposure")
+            # Add this section under the "📈 Deep Analysis" section in Stock Comparison
 
-            # Volatility Analysis
-            volatility = pd.DataFrame({
-                "Stock": [stock1, stock2],
-                "Volatility": [
-                    comparison_df[stock1].pct_change().std() * 100,
-                    comparison_df[stock2].pct_change().std() * 100
-                ]
-            })
-            
-            st.subheader("📉 Volatility Comparison")
-            fig_vol = px.bar(volatility, x="Stock", y="Volatility", 
-                            color="Stock", template="plotly_dark",
-                            title="Price Volatility (Standard Deviation of Daily Returns)")
-            st.plotly_chart(fig_vol)
+# ======== ENHANCEMENT START ======== #
+# Deep Analysis Text Summary
+st.subheader("🔍 Deep Analysis Results")
+def generate_deep_analysis(stock_name, prices):
+    ma_50 = prices.rolling(50).mean().iloc[-1]
+    ma_200 = prices.rolling(200).mean().iloc[-1]
+    current_price = prices.iloc[-1]
+    
+    analysis = f"**{stock_name} Analysis**: "
+    if current_price > ma_50 and current_price > ma_200:
+        analysis += f"Strong bullish trend (${current_price:.2f} above both 50-period (${ma_50:.2f}) and 200-period MA (${ma_200:.2f})). "
+    elif current_price > ma_200:
+        analysis += f"Moderate bullish trend (above 200-period MA at ${ma_200:.2f}) but below 50-period MA. "
+    else:
+        analysis += "Bearish trend (below key moving averages). "
+        
+    if prices.iloc[-1] > prices.iloc[-100]:
+        analysis += "Showing 100-period upward momentum. "
+    return analysis
 
-            # Momentum Analysis
-            st.subheader("🚀 Momentum Analysis")
-            momentum = pd.DataFrame({
-                "Stock": [stock1, stock2],
-                "Last Hour Change": [
-                    (comparison_df[stock1][-1] - comparison_df[stock1][-6])/comparison_df[stock1][-6] * 100,
-                    (comparison_df[stock2][-1] - comparison_df[stock2][-6])/comparison_df[stock2][-6] * 100
-                ]
-            })
-            
-            fig_momentum = px.bar(momentum, x="Stock", y="Last Hour Change", 
-                                 color="Stock", template="plotly_dark",
-                                 title="Percentage Change in Last Hour")
-            st.plotly_chart(fig_momentum)
+st.markdown(generate_deep_analysis(stock1, comparison_df[stock1]))
+st.markdown(generate_deep_analysis(stock2, comparison_df[stock2]))
 
-            # Predictive Insights
-            st.subheader("🔮 Predictive Insights")
-            if correlation > 0.7 and volatility[volatility['Stock'] == stock1]['Volatility'].values[0] > 3:
-                st.success(f"**Trading Opportunity:** Consider paired trading strategy for {stock1} and {stock2}")
-            elif momentum["Last Hour Change"].max() > 2:
-                st.info(f"**Short-Term Play:** {momentum.loc[momentum['Last Hour Change'].idxmax()]['Stock']} showing strong momentum")
-            else:
-                st.warning("**Neutral Outlook:** No strong signals detected - maintain current positions")
+# Volatility Insights
+st.subheader("⚡ Volatility Insights")
+def volatility_insight(stock_name, volatility):
+    if volatility > 3:
+        return f"**{stock_name}**: High volatility ({volatility:.2f}%) - Consider strict stop-loss strategies"
+    elif volatility > 1.5:
+        return f"**{stock_name}**: Moderate volatility ({volatility:.2f}%) - Swing trading opportunities"
+    return f"**{stock_name}**: Low volatility ({volatility:.2f}%) - Stable long-term holding"
 
-        else:
-            st.warning("⚠ Failed to fetch comparison data")
+st.markdown(volatility_insight(stock1, volatility.loc[0, "Volatility"]))
+st.markdown(volatility_insight(stock2, volatility.loc[1, "Volatility"]))
+
+# Momentum Analysis
+st.subheader("🚀 Momentum Signals")
+def momentum_signal(stock_name, change):
+    if change > 2:
+        return f"**{stock_name}**: Strong upward momentum (+{change:.2f}%) - Consider short-term longs"
+    elif change < -2:
+        return f"**{stock_name}**: Strong downward momentum ({change:.2f}%) - Potential short opportunity"
+    return f"**{stock_name}**: Neutral momentum ({change:.2f}%) - Wait for clearer signals"
+
+st.markdown(momentum_signal(stock1, momentum.loc[0, "Last Hour Change"]))
+st.markdown(momentum_signal(stock2, momentum.loc[1, "Last Hour Change"]))
+
+# Predictive Insights
+st.subheader("🔮 Predictive Summary")
+if correlation > 0.7:
+    predictive_text = f"**Strong Correlation Play**: {stock1} and {stock2} move together (r={correlation:.2f}). "
+    if volatility.loc[0, "Volatility"] > volatility.loc[1, "Volatility"]:
+        predictive_text += f"Prefer {stock1} for volatility plays."
+    else:
+        predictive_text += f"Consider {stock2} for more stable exposure."
+elif correlation < -0.7:
+    predictive_text = f"**Hedging Opportunity**: {stock1} and {stock2} move oppositely (r={correlation:.2f}) - Good pair for risk management"
+else:
+    predictive_text = "**Diversified Exposure**: No strong correlation - Suitable for portfolio diversification"
+
+if any(momentum["Last Hour Change"].abs() > 2):
+    predictive_text += " Warning: Strong momentum detected - Monitor for potential reversals"
+    
+st.markdown(predictive_text)
+# ======== ENHANCEMENT END ======== #

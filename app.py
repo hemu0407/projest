@@ -256,4 +256,4 @@ elif page == "🔄 Stock Comparison":
                 st.warning("**Neutral Outlook:** No strong signals detected - maintain current positions")
 
         else:
-            st.warning("⚠ Failed to fetch comparison data"
+            st.warning("⚠ Failed to fetch comparison data")

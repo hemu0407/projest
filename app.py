@@ -4,115 +4,9 @@ import pandas as pd
 import plotly.express as px
 import numpy as np
 from datetime import datetime, timedelta
-import mysql.connector
-from sklearn.svm import SVR
-from sklearn.model_selection import train_test_split
-from sklearn.metrics import mean_squared_error
 
 # Set Page Configuration
 st.set_page_config(page_title="Stock Market App", layout="wide")
-
-# MySQL Database Configuration
-db_config = {
-    "host": "HARRY",  # Change if MySQL is on a remote server
-    "user": "root",       # Your MySQL username
-    "password": "Mysql$0407",  # Your MySQL password
-    "database": "stock_market_app"  # Your database name
-}
-
-# Function to connect to the database
-def connect_to_database():
-    try:
-        conn = mysql.connector.connect(**db_config)
-        return conn
-    except mysql.connector.Error as err:
-        st.error(f"Failed to connect to the database: {err}")
-        st.stop()
-
-# Function to create users table if it doesn't exist
-def create_users_table():
-    conn = connect_to_database()
-    cursor = conn.cursor()
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS users (
-            id INT AUTO_INCREMENT PRIMARY KEY,
-            username VARCHAR(255) NOT NULL UNIQUE,
-            password VARCHAR(255) NOT NULL
-        )
-    """)
-    conn.commit()
-    cursor.close()
-    conn.close()
-
-# Function to add a new user to the database
-def add_user(username, password):
-    conn = connect_to_database()
-    cursor = conn.cursor()
-    try:
-        cursor.execute("INSERT INTO users (username, password) VALUES (%s, %s)", (username, password))
-        conn.commit()
-        st.sidebar.success("Account created successfully! Please login.")
-    except mysql.connector.IntegrityError:
-        st.sidebar.error("Username already exists")
-    finally:
-        cursor.close()
-        conn.close()
-
-# Function to check if a user exists in the database
-def check_user(username, password):
-    conn = connect_to_database()
-    cursor = conn.cursor()
-    cursor.execute("SELECT * FROM users WHERE username = %s AND password = %s", (username, password))
-    user = cursor.fetchone()
-    cursor.close()
-    conn.close()
-    return user is not None
-
-# Initialize session state
-if "logged_in" not in st.session_state:
-    st.session_state.logged_in = False
-if "username" not in st.session_state:
-    st.session_state.username = ""
-if "alerts" not in st.session_state:
-    st.session_state.alerts = []
-
-# Create users table if it doesn't exist
-create_users_table()
-
-# Login and Signup Forms
-def login_signup_form():
-    st.sidebar.title("🔐 Login / Signup")
-    choice = st.sidebar.radio("Choose Action", ["Login", "Signup"])
-
-    if choice == "Login":
-        st.sidebar.subheader("Login")
-        username = st.sidebar.text_input("Username")
-        password = st.sidebar.text_input("Password", type="password")
-
-        if st.sidebar.button("Login"):
-            if check_user(username, password):
-                st.session_state.logged_in = True
-                st.session_state.username = username
-                st.sidebar.success("Logged in successfully!")
-            else:
-                st.sidebar.error("Invalid username or password")
-
-    elif choice == "Signup":
-        st.sidebar.subheader("Signup")
-        new_username = st.sidebar.text_input("Choose a Username")
-        new_password = st.sidebar.text_input("Choose a Password", type="password")
-        confirm_password = st.sidebar.text_input("Confirm Password", type="password")
-
-        if st.sidebar.button("Signup"):
-            if new_password == confirm_password:
-                add_user(new_username, new_password)
-            else:
-                st.sidebar.error("Passwords do not match")
-
-# Display login/signup form if not logged in
-if not st.session_state.logged_in:
-    login_signup_form()
-    st.stop()
 
 # API Key
 API_KEY = "B1N3W1H7PD3F8ZRG"
@@ -137,25 +31,9 @@ def get_stock_data(symbol):
     response = requests.get(url)
     return response.json()
 
-# Function to predict future prices using SVM
-def predict_future_prices(df):
-    # Prepare data for SVM
-    df["Time"] = np.arange(len(df))  # Use time as a feature
-    X = df[["Time"]]
-    y = df["Close"]
-
-    # Split data into training and testing sets (80-20 rule)
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-
-    # Train SVM model
-    model = SVR(kernel="rbf", C=100, gamma=0.1)
-    model.fit(X_train, y_train)
-
-    # Predict future prices
-    future_times = np.arange(len(df), len(df) + 10).reshape(-1, 1)  # Predict next 10 intervals
-    future_prices = model.predict(future_times)
-
-    return future_times.flatten(), future_prices
+# Initialize session state
+if "alerts" not in st.session_state:
+    st.session_state.alerts = []
 
 # Sidebar Navigation
 st.sidebar.title("📌 Navigation")
@@ -244,23 +122,19 @@ elif page == "📊 Stock Market Dashboard":
             st.info(f"💰 Total Investment: ${total_cost:.2f}")
 
             # Future Trend Prediction
-            st.subheader("📈 Future Stock Price Prediction (SVM Model)")
+            st.subheader("📈 Future Stock Price Prediction (Moving Averages)")
             today = datetime.now().date()
             df_today = df[df.index.date == today]
 
             if df_today.empty:
                 st.warning("⚠ Market is closed. No predictions available for today.")
             else:
-                # Predict future prices using SVM
-                future_times, future_prices = predict_future_prices(df_today)
+                window_size = 10
+                df_today["Moving Avg"] = df_today["Close"].rolling(window=window_size).mean()
+                future_prices = df_today["Moving Avg"].iloc[-window_size:].values
+                future_times = pd.date_range(start=df_today.index[-1], periods=window_size + 1, freq="5T")[1:]
 
-                # Create a DataFrame for future predictions
-                future_df = pd.DataFrame({
-                    "Time": pd.date_range(start=df_today.index[-1], periods=len(future_times), freq="5T"),
-                    "Predicted Price": future_prices
-                })
-
-                # Plot future predictions
+                future_df = pd.DataFrame({"Time": future_times, "Predicted Price": future_prices})
                 fig_pred = px.line(future_df, x="Time", y="Predicted Price", 
                                  title="📈 Predicted Stock Prices (Next 10 Intervals)", 
                                  template="plotly_dark")
@@ -277,7 +151,7 @@ elif page == "📊 Stock Market Dashboard":
                     st.info(f"💡 Recommendation: Consider selling when price reaches ${future_price:.2f}")
                 else:
                     st.error(f"📉 Loss: ${abs(profit_loss):.2f} ({abs(profit_loss_percentage):.2f}%)")
-                    st.warning("💡 Recommendation: Do not invest. Wait for a better entry point.")
+                    st.warning("💡 Recommendation: Wait for better entry point")
 
 # Price Alert Section
 elif page == "🚨 Price Alert":

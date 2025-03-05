@@ -1,4 +1,3 @@
-# Import statements at the top of the script
 import streamlit as st
 import requests
 import pandas as pd
@@ -207,7 +206,6 @@ Version: 1.0.0
 # Home Page
 if st.session_state.page == "🏠 Home":
 # Add this at the top with other imports
-from datetime import datetime
 
 # NewsAPI Configuration (Get your free API key from https://newsapi.org/)
 NEWS_API_KEY = "e2d4e597c657407b9c1dee3a880cd670"  # Replace with your actual key

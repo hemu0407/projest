@@ -202,10 +202,10 @@ Version: 1.0.0
 # Home Page
 if st.session_state.page == "🏠 Home":
     # Add this at the top with other imports
-from datetime import datetime
+    from datetime import datetime
 
 # NewsAPI Configuration (Get your free API key from https://newsapi.org/)
-NEWS_API_KEY = "YOUR_NEWS_API_KEY"  # Replace with your actual key
+    NEWS_API_KEY = "e2d4e597c657407b9c1dee3a880cd670"  # Replace with your actual key
 
 def fetch_news():
     """Fetch financial news from NewsAPI"""

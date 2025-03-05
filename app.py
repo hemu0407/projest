@@ -4,7 +4,86 @@ import pandas as pd
 import plotly.express as px
 import numpy as np
 from datetime import datetime, timedelta
+import streamlit as st
+import sqlite3
+import hashlib
 
+# Function to hash passwords
+def hash_password(password):
+    return hashlib.sha256(password.encode()).hexdigest()
+
+# Function to create users table
+def create_users_table():
+    conn = sqlite3.connect("users.db")
+    c = conn.cursor()
+    c.execute("""
+        CREATE TABLE IF NOT EXISTS users (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            username TEXT UNIQUE,
+            password TEXT
+        )
+    """)
+    conn.commit()
+    conn.close()
+
+# Function to register user
+def register_user(username, password):
+    conn = sqlite3.connect("users.db")
+    c = conn.cursor()
+    try:
+        c.execute("INSERT INTO users (username, password) VALUES (?, ?)", (username, hash_password(password)))
+        conn.commit()
+        return True
+    except sqlite3.IntegrityError:
+        return False
+    finally:
+        conn.close()
+
+# Function to verify login
+def login_user(username, password):
+    conn = sqlite3.connect("users.db")
+    c = conn.cursor()
+    c.execute("SELECT password FROM users WHERE username = ?", (username,))
+    user = c.fetchone()
+    conn.close()
+    if user and user[0] == hash_password(password):
+        return True
+    return False
+
+# Create users table on startup
+create_users_table()
+
+# Streamlit UI
+st.title("Login Page")
+
+menu = ["Login", "Register"]
+choice = st.sidebar.selectbox("Menu", menu)
+
+if choice == "Login":
+    st.subheader("Login")
+    username = st.text_input("Username")
+    password = st.text_input("Password", type="password")
+    
+    if st.button("Login"):
+        if login_user(username, password):
+            st.success(f"Welcome {username}!")
+        else:
+            st.error("Invalid username or password")
+
+elif choice == "Register":
+    st.subheader("Register")
+    new_username = st.text_input("New Username")
+    new_password = st.text_input("New Password", type="password")
+    confirm_password = st.text_input("Confirm Password", type="password")
+    
+    if st.button("Register"):
+        if new_password == confirm_password:
+            if register_user(new_username, new_password):
+                st.success("Registration successful! You can now log in.")
+            else:
+                st.error("Username already exists!")
+        else:
+            st.error("Passwords do not match!")
 # Set Page Configuration
 st.set_page_config(page_title="Stock Market App", layout="wide")
 

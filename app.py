@@ -77,14 +77,18 @@ if not st.session_state.authenticated:
 # =================================================================
 
 # Add logout button to sidebar
+# Modified logout button and welcome message
+# Add logout button to sidebar
 st.sidebar.markdown("---")
 if st.sidebar.button("🚪 Logout"):
     st.session_state.authenticated = False
-    st.session_state.clear()  # Clear all session state variables
+    if 'current_user' in st.session_state:
+        del st.session_state.current_user
     st.success("Logged out successfully! Redirecting to login page...")
 
-# Show welcome message
-st.sidebar.markdown(f"### 👋 Welcome, {st.session_state.current_user}!")
+# Show welcome message only if user is logged in
+if 'current_user' in st.session_state:
+    st.sidebar.markdown(f"### 👋 Welcome, {st.session_state.current_user}!")
 
 # [Rest of your code remains unchanged...]
 st.markdown(

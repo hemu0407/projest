@@ -204,7 +204,7 @@ if st.session_state.page == "🏠 Home":
 elif st.session_state.page == "📊 Stock Market Dashboard":
     st.title("📊 Stock Market Dashboard")
     
-    selected_company = st.selectbox("📌 Select a Company", list(companies.keys())
+selected_company = st.selectbox("📌 Select a Company", list(companies.keys()))
 
     if st.button("🔍 Fetch Stock Data"):
         stock_data = get_stock_data(companies[selected_company])

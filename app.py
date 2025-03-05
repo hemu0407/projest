@@ -405,5 +405,30 @@ def main_app():
 
                 # Final Recommendations
                 st.subheader("💡 Investment Recommendations")
+                # Final Recommendations (continued)
                 if correlation > 0.7 and abs(momentum1 - momentum2) > 5:
-                    st.success("*Pairs Trading Opportunity*")
+                    st.success("Pairs Trading Opportunity")
+                    st.write("- Buy the outperforming stock")
+                    st.write("- Short the underperforming stock")
+                elif vol1 > 5 and vol2 > 5:
+                    st.warning("High Volatility Alert")
+                    st.write("- Consider options strategies")
+                    st.write("- Implement stop-loss orders")
+                else:
+                    st.info("Diversification Opportunity")
+                    st.write("- Consider balanced portfolio allocation")
+
+        else:
+            st.warning("⚠ Failed to fetch comparison data")
+
+# Run the appropriate page based on authentication
+if not st.session_state.authenticated:
+    auth_page()
+else:
+    main_app()
+    # Add logout button in sidebar
+    st.sidebar.markdown("---")
+    if st.sidebar.button("🚪 Logout"):
+        st.session_state.authenticated = False
+        st.session_state.current_user = None
+        st.experimental_rerun()

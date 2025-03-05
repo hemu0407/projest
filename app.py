@@ -38,101 +38,47 @@ def get_stock_data(symbol):
 if "alerts" not in st.session_state:
     st.session_state.alerts = []
 
-import streamlit as st
+# Sidebar Navigation
+st.sidebar.title("📌 Navigation")
+st.sidebar.markdown("---")  # Adds a horizontal line for separation
 
-# Function to create a section with an expander
-def create_expander_section(title, content, expanded=False):
-    with st.sidebar.expander(title, expanded=expanded):
-        st.markdown(content)
+# Sidebar Sections
+st.sidebar.markdown("### 📊 Dashboard")
+page = st.sidebar.radio("", ["🏠 Home", "📊 Stock Market Dashboard", "🚨 Price Alert", "🔄 Stock Comparison"], index=1)
 
-# Function to display feedback section
-def display_feedback():
-    st.sidebar.markdown("---")
-    st.sidebar.markdown("### 💬 Feedback")
-    feedback = st.sidebar.slider("How would you rate this app?", 1, 5, 3)
-    st.sidebar.write(f"Your Rating: {feedback} ⭐")
-    
-    if feedback >= 4:
-        st.sidebar.success("Thank you for your positive feedback! 😊")
-    else:
-        st.sidebar.warning("We appreciate your feedback! We'll work on improving. 🙏")
+# Additional Information Section
+st.sidebar.markdown("---")
+st.sidebar.markdown("### ℹ Information")
+st.sidebar.info("""
+This app provides real-time stock market data, price alerts, and advanced stock comparison tools. 
+Use the navigation above to explore different features.
+""")
 
-# Function to display app usage progress
-def display_app_usage():
-    st.sidebar.markdown("---")
-    st.sidebar.markdown("### 📊 App Usage")
-    app_usage = st.sidebar.slider("How much have you explored the app?", 0, 100, 50)
-    st.sidebar.progress(app_usage)
+# API Information Section
+st.sidebar.markdown("---")
+st.sidebar.markdown("### 🔑 API Information")
+st.sidebar.info("""
+Data is fetched using the Alpha Vantage API. 
+For more details, visit [Alpha Vantage](https://www.alphavantage.co/).
+""")
 
-# Function to display theme selector
-def display_theme_selector():
-    st.sidebar.markdown("### 🎨 Theme Selector")
-    theme = st.sidebar.selectbox("Choose Theme", ["Light", "Dark"], index=1)
-    if theme == "Dark":
-        st.sidebar.markdown("🔵 Dark Mode Enabled")
-    else:
-        st.sidebar.markdown("⚪ Light Mode Enabled")
+# Contact Information Section
+st.sidebar.markdown("---")
+st.sidebar.markdown("### 📧 Contact")
+st.sidebar.info("""
+For any queries or feedback, please contact us at:
+- Email: support@stockmarketapp.com
+- Phone: +1 (123) 456-7890
+""")
 
-# Function to display footer
-def display_footer():
-    st.sidebar.markdown("---")
-    st.sidebar.markdown("### 📅 Last Updated")
-    st.sidebar.info("""
-    Date: 2023-10-01  
-    Version: 1.0.0
-    """)
+# Footer Section
+st.sidebar.markdown("---")
+st.sidebar.markdown("### 📅 Last Updated")
+st.sidebar.info("""
+Date: 2023-10-01  
+Version: 1.0.0
+""")
 
-# Main Sidebar Function
-def create_sidebar():
-    st.sidebar.title("📌 Navigation")
-    st.sidebar.markdown("---")  # Adds a horizontal line for separation
-
-    # Theme Selector
-    display_theme_selector()
-
-    # Dashboard Section with Expander
-    with st.sidebar.expander("📊 Dashboard", expanded=True):
-        page = st.radio("", ["🏠 Home", "📊 Stock Market Dashboard", "🚨 Price Alert", "🔄 Stock Comparison"])
-
-    # App Usage Progress
-    display_app_usage()
-
-    # Additional Information Section
-    create_expander_section(
-        "ℹ Information",
-        """
-        This app provides real-time stock market data, price alerts, and advanced stock comparison tools. 
-        Use the navigation above to explore different features.
-        """
-    )
-
-    # API Information Section
-    create_expander_section(
-        "🔑 API Information",
-        """
-        Data is fetched using the Alpha Vantage API. 
-        For more details, visit [Alpha Vantage](https://www.alphavantage.co/).
-        """
-    )
-
-    # Contact Information Section
-    create_expander_section(
-        "📧 Contact",
-        """
-        For any queries or feedback, please contact us at:
-        - Email: support@stockmarketapp.com
-        - Phone: +1 (123) 456-7890
-        """
-    )
-
-    # Feedback Section
-    display_feedback()
-
-    # Footer Section
-    display_footer()
-
-# Call the sidebar function
-create_sidebar()
 # Home Page
 if page == "🏠 Home":
     st.image("https://source.unsplash.com/featured/?stocks,market", use_column_width=True)

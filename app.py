@@ -4,7 +4,6 @@ import pandas as pd
 import plotly.express as px
 import numpy as np
 from datetime import datetime, timedelta
-import mysql.connector
 
 # Set Page Configuration
 st.set_page_config(page_title="Stock Market App", layout="wide")
@@ -65,33 +64,39 @@ st.sidebar.markdown("---")
 st.sidebar.markdown("### 📧 Contact")
 st.sidebar.info("""
 For any queries or feedback, please contact us at:
-- *Email:* support@stockmarketapp.com
-- *Phone:* +1 (123) 456-7890
+- Email: support@stockmarketapp.com
+- Phone: +1 (123) 456-7890
 """)
 
 # Footer Section
 st.sidebar.markdown("---")
 st.sidebar.markdown("### 📅 Last Updated")
 st.sidebar.info("""
-*Date:* 2023-10-01  
-*Version:* 1.0.0
+Date: 2023-10-01  
+Version: 1.0.0
 """)
 
-# --------------------------
-# Page Routing
-# --------------------------
+# Home Page
 if page == "🏠 Home":
+    st.image("https://source.unsplash.com/featured/?stocks,market", use_column_width=True)
+
+# The rest of your 475-line code remains unchanged...
+
+
+elif page == "🏠 Home":
     st.title("📈 Stock Market Analyzer")
     st.markdown("---")
 
     # Database Connection (MySQL)
+    import mysql.connector
+
     def create_connection():
         try:
             conn = mysql.connector.connect(
                 host="localhost",
-                user="root",
-                password="Mysql$0407",
-                database="hemannth"
+                user="root",  # Replace with your MySQL username
+                password="password",  # Replace with your MySQL password
+                database="stock_market_app"  # Replace with your database name
             )
             return conn
         except mysql.connector.Error as e:
@@ -184,10 +189,10 @@ if page == "🏠 Home":
 
     with col2:
         st.subheader("📰 Latest Stock Market News")
-        # Fetch News Articles (NewsAPI)
+        # Fetch News Articles (Example API)
         def fetch_news():
             try:
-                news_api_key = "e2d4e597c657407b9c1dee3a880cd670"  # Your News API key
+                news_api_key = "YOUR_NEWS_API_KEY"  # Replace with your News API key
                 url = f"https://newsapi.org/v2/everything?q=stock+market&apiKey={news_api_key}"
                 response = requests.get(url)
                 if response.status_code == 200:
@@ -203,8 +208,8 @@ if page == "🏠 Home":
         if news_articles:
             for article in news_articles[:5]:  # Display top 5 articles
                 st.markdown(f"### {article['title']}")
-                st.write(f"**Source:** {article['source']['name']}")
-                st.write(f"**Published At:** {article['publishedAt']}")
+                st.write(f"*Source:* {article['source']['name']}")
+                st.write(f"*Published At:* {article['publishedAt']}")
                 st.write(article['description'])
                 st.markdown(f"[Read More]({article['url']})")
                 st.markdown("---")
@@ -214,10 +219,10 @@ if page == "🏠 Home":
     # Additional Features
     st.subheader("🌟 Why Choose Us?")
     st.markdown("""
-    - **Real-Time Data:** Get up-to-date stock market data.
-    - **Advanced Analysis:** Perform in-depth stock comparisons.
-    - **Price Alerts:** Never miss important price movements.
-    - **Personalized Experience:** Sign up to save your preferences and alerts.
+    - *Real-Time Data:* Get up-to-date stock market data.
+    - *Advanced Analysis:* Perform in-depth stock comparisons.
+    - *Price Alerts:* Never miss important price movements.
+    - *Personalized Experience:* Sign up to save your preferences and alerts.
     """)
 
     st.subheader("📊 Quick Stats")
@@ -232,11 +237,10 @@ if page == "🏠 Home":
     st.subheader("📞 Contact Us")
     st.markdown("""
     Have questions or need support? Reach out to us:
-    - **Email:** support@stockmarketapp.com
-    - **Phone:** +1 (123) 456-7890
+    - *Email:* support@stockmarketapp.com
+    - *Phone:* +1 (123) 456-7890
     """)
-
-# Stock Market Dashboard (Unchanged)
+# Stock Market Dashboard
 elif page == "📊 Stock Market Dashboard":
     st.title("📊 Stock Market Dashboard")
     
@@ -309,7 +313,7 @@ elif page == "📊 Stock Market Dashboard":
                     st.error(f"📉 Loss: ${abs(profit_loss):.2f} ({abs(profit_loss_percentage):.2f}%)")
                     st.warning("💡 Recommendation: Wait for better entry point")
 
-# Price Alert Section (Unchanged)
+# Price Alert Section
 elif page == "🚨 Price Alert":
     st.title("🚨 Price Alert")
 
@@ -361,7 +365,7 @@ elif page == "🚨 Price Alert":
             else:
                 st.warning(f"⚠ Couldn't fetch data for {alert['company']}")
 
-# Stock Comparison Section (Unchanged)
+# Stock Comparison Section (Updated)
 elif page == "🔄 Stock Comparison":
     st.title("🔄 Advanced Stock Comparison")
 
@@ -406,13 +410,13 @@ elif page == "🔄 Stock Comparison":
             with col2:
                 if correlation > 0.8:
                     st.success("Strong Positive Correlation")
-                    st.write("💡 **Strategy:** Consider pairs trading or sector-based investing")
+                    st.write("💡 Strategy: Consider pairs trading or sector-based investing")
                 elif correlation < -0.8:
                     st.warning("Strong Negative Correlation")
-                    st.write("💡 **Strategy:** Potential hedging opportunity")
+                    st.write("💡 Strategy: Potential hedging opportunity")
                 else:
                     st.info("Weak Correlation")
-                    st.write("💡 **Strategy:** Good for portfolio diversification")
+                    st.write("💡 Strategy: Good for portfolio diversification")
 
             # Volatility Analysis with Risk Assessment
             st.subheader("📉 Volatility Comparison")
@@ -429,6 +433,44 @@ elif page == "🔄 Stock Comparison":
 
             if vol1 > vol2:
                 st.warning(f"{stock1} is {vol1/vol2:.1f}x more volatile than {stock2}")
-                st.write("💡 **Consider:** Higher risk/reward potential in", stock1)
+                st.write("💡 Consider: Higher risk/reward potential in", stock1)
             else:
-                st.info(f"{stock2} is {vol2/vol
+                st.info(f"{stock2} is {vol2/vol1:.1f}x more volatile than {stock1}")
+                st.write("💡 Consider:", stock2, "might offer better short-term trading opportunities")
+
+            # Momentum Analysis with Trend Insights
+            st.subheader("🚀 Momentum Analysis")
+            momentum1 = (comparison_df[stock1].iloc[-1] / comparison_df[stock1].iloc[0] - 1) * 100
+            momentum2 = (comparison_df[stock2].iloc[-1] / comparison_df[stock2].iloc[0] - 1) * 100
+            mom_df = pd.DataFrame({
+                "Stock": [stock1, stock2],
+                "Momentum": [momentum1, momentum2]
+            })
+            fig_momentum = px.bar(mom_df, x="Stock", y="Momentum", 
+                                 color="Stock", template="plotly_dark",
+                                 title="Percentage Change Over Period")
+            st.plotly_chart(fig_momentum)
+
+            if momentum1 > momentum2:
+                st.success(f"{stock1} shows stronger upward momentum")
+                st.write("💡 Consider: Potential buying opportunity in", stock1)
+            else:
+                st.warning(f"{stock2} demonstrates better recent performance")
+                st.write("💡 Consider: Investigate", stock2, "for potential investments")
+
+            # Final Recommendations
+            st.subheader("💡 Investment Recommendations")
+            if correlation > 0.7 and abs(momentum1 - momentum2) > 5:
+                st.success("Pairs Trading Opportunity")
+                st.write("- Buy the outperforming stock")
+                st.write("- Short the underperforming stock")
+            elif vol1 > 5 and vol2 > 5:
+                st.warning("High Volatility Alert")
+                st.write("- Consider options strategies")
+                st.write("- Implement stop-loss orders")
+            else:
+                st.info("Diversification Opportunity")
+                st.write("- Consider balanced portfolio allocation")
+
+        else:
+            st.warning("⚠ Failed to fetch comparison data")

@@ -4,14 +4,12 @@ import pandas as pd
 import plotly.express as px
 import numpy as np
 from datetime import datetime, timedelta
-import mysql.connector
-import hashlib
 
 # Set Page Configuration
 st.set_page_config(page_title="Stock Market App", layout="wide")
 
 # API Key
-API_KEY = "MVVQ3GM2LROFV9JI"
+API_KEY = "B1N3W1H7PD3F8ZRG"
 
 # Stock Symbols
 companies = {
@@ -36,155 +34,54 @@ def get_stock_data(symbol):
 # Initialize session state
 if "alerts" not in st.session_state:
     st.session_state.alerts = []
-if "user" not in st.session_state:
-    st.session_state.user = None
 
-# --------------------------
-# MySQL Database Functions
-# --------------------------
+# Sidebar Navigation
+st.sidebar.title("📌 Navigation")
+st.sidebar.markdown("---")  # Adds a horizontal line for separation
 
-# Function to hash passwords
-def hash_password(password):
-    return hashlib.sha256(password.encode()).hexdigest()
+# Sidebar Sections
+st.sidebar.markdown("### 📊 Dashboard")
+page = st.sidebar.radio("", ["🏠 Home", "📊 Stock Market Dashboard", "🚨 Price Alert", "🔄 Stock Comparison"])
 
-# Function to create a connection to MySQL
-def create_connection():
-    try:
-        conn = mysql.connector.connect(
-            host="127.0.0.1",   # Use "127.0.0.1" instead of "localhost"
-            user="root",        # Your MySQL username
-            password="Mysql$0407", # Your MySQL password
-            database="stock_market_app"   # Your database name
-        )
-        return conn
-    except mysql.connector.Error as e:
-        st.error(f"Error connecting to MySQL: {e}")
-        return None
+# Additional Information Section
+st.sidebar.markdown("---")
+st.sidebar.markdown("### ℹ Information")
+st.sidebar.info("""
+This app provides real-time stock market data, price alerts, and advanced stock comparison tools. 
+Use the navigation above to explore different features.
+""")
 
-# Function to create users table
-def create_users_table():
-    conn = create_connection()
-    if conn:
-        cursor = conn.cursor()
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS users (
-                id INT AUTO_INCREMENT PRIMARY KEY,
-                username VARCHAR(50) UNIQUE NOT NULL,
-                password VARCHAR(100) NOT NULL,
-                email VARCHAR(100) UNIQUE NOT NULL
-            )
-        """)
-        conn.commit()
-        cursor.close()
-        conn.close()
+# API Information Section
+st.sidebar.markdown("---")
+st.sidebar.markdown("### 🔑 API Information")
+st.sidebar.info("""
+Data is fetched using the Alpha Vantage API. 
+For more details, visit [Alpha Vantage](https://www.alphavantage.co/).
+""")
 
-# Function to register user
-def register_user(username, password, email):
-    conn = create_connection()
-    if conn:
-        cursor = conn.cursor()
-        try:
-            cursor.execute("""
-                INSERT INTO users (username, password, email)
-                VALUES (%s, %s, %s)
-            """, (username, hash_password(password), email))
-            conn.commit()
-            return True
-        except mysql.connector.IntegrityError:
-            return False
-        finally:
-            cursor.close()
-            conn.close()
+# Contact Information Section
+st.sidebar.markdown("---")
+st.sidebar.markdown("### 📧 Contact")
+st.sidebar.info("""
+For any queries or feedback, please contact us at:
+- Email: support@stockmarketapp.com
+- Phone: +1 (123) 456-7890
+""")
 
-# Function to verify login
-def login_user(username, password):
-    conn = create_connection()
-    if conn:
-        cursor = conn.cursor()
-        cursor.execute("SELECT password FROM users WHERE username = %s", (username,))
-        user = cursor.fetchone()
-        cursor.close()
-        conn.close()
-        if user and user[0] == hash_password(password):
-            return True
-    return False
-
-# Create users table on startup
-create_users_table()
-
-# --------------------------
-# Streamlit UI
-# --------------------------
+# Footer Section
+st.sidebar.markdown("---")
+st.sidebar.markdown("### 📅 Last Updated")
+st.sidebar.info("""
+Date: 2023-10-01  
+Version: 1.0.0
+""")
 
 # Home Page
-def home_page():
-    st.title("📈 Stock Market Analyzer")
-    st.markdown("---")
-
-    # Centered Sign In / Sign Up Section
-    col1, col2, col3 = st.columns([1, 2, 1])
-    with col2:
-        st.subheader("🔐 Sign In / Sign Up")
-        tab1, tab2 = st.tabs(["Sign In", "Sign Up"])
-
-        with tab1:
-            st.write("Already have an account? Sign in below.")
-            username = st.text_input("Username", key="signin_username")
-            password = st.text_input("Password", type="password", key="signin_password")
-            if st.button("Sign In"):
-                if username and password:
-                    if login_user(username, password):
-                        st.session_state.user = username
-                        st.success(f"Welcome back, {username}!")
-                    else:
-                        st.error("Invalid username or password. Please sign up.")
-                else:
-                    st.warning("Please enter both username and password.")
-
-        with tab2:
-            st.write("New user? Sign up below.")
-            new_username = st.text_input("Username", key="signup_username")
-            new_password = st.text_input("Password", type="password", key="signup_password")
-            email = st.text_input("Email", key="signup_email")
-            if st.button("Sign Up"):
-                if new_username and new_password and email:
-                    if register_user(new_username, new_password, email):
-                        st.success("🎉 Sign Up Successful! Please log in.")
-                    else:
-                        st.error("Username or email already exists!")
-                else:
-                    st.warning("Please fill all fields.")
-
-    # News Articles Section
-    st.subheader("📰 Latest Stock Market News")
-    def fetch_news():
-        try:
-            news_api_key = "e2d4e597c657407b9c1dee3a880cd670"  # Your News API key
-            url = f"https://newsapi.org/v2/everything?q=stock+market&apiKey={news_api_key}"
-            response = requests.get(url)
-            if response.status_code == 200:
-                return response.json()["articles"]
-            else:
-                st.error("Failed to fetch news. Please try again later.")
-                return []
-        except Exception as e:
-            st.error(f"Error fetching news: {e}")
-            return []
-
-    news_articles = fetch_news()
-    if news_articles:
-        for article in news_articles[:5]:  # Display top 5 articles
-            st.markdown(f"### {article['title']}")
-            st.write(f"**Source:** {article['source']['name']}")
-            st.write(f"**Published At:** {article['publishedAt']}")
-            st.write(article['description'])
-            st.markdown(f"[Read More]({article['url']})")
-            st.markdown("---")
-    else:
-        st.info("No news articles available at the moment.")
+if page == "🏠 Home":
+    st.image("https://source.unsplash.com/featured/?stocks,market", use_column_width=True)
 
 # Stock Market Dashboard
-def stock_market_dashboard():
+elif page == "📊 Stock Market Dashboard":
     st.title("📊 Stock Market Dashboard")
     
     selected_company = st.selectbox("📌 Select a Company", list(companies.keys()))
@@ -257,7 +154,7 @@ def stock_market_dashboard():
                     st.warning("💡 Recommendation: Wait for better entry point")
 
 # Price Alert Section
-def price_alert():
+elif page == "🚨 Price Alert":
     st.title("🚨 Price Alert")
 
     if "alerts" not in st.session_state:
@@ -308,8 +205,8 @@ def price_alert():
             else:
                 st.warning(f"⚠ Couldn't fetch data for {alert['company']}")
 
-# Stock Comparison Section
-def stock_comparison():
+# Stock Comparison Section (Updated)
+elif page == "🔄 Stock Comparison":
     st.title("🔄 Advanced Stock Comparison")
 
     company_list = list(companies.keys())
@@ -353,13 +250,13 @@ def stock_comparison():
             with col2:
                 if correlation > 0.8:
                     st.success("Strong Positive Correlation")
-                    st.write("💡 **Strategy:** Consider pairs trading or sector-based investing")
+                    st.write("💡 *Strategy:* Consider pairs trading or sector-based investing")
                 elif correlation < -0.8:
                     st.warning("Strong Negative Correlation")
-                    st.write("💡 **Strategy:** Potential hedging opportunity")
+                    st.write("💡 *Strategy:* Potential hedging opportunity")
                 else:
                     st.info("Weak Correlation")
-                    st.write("💡 **Strategy:** Good for portfolio diversification")
+                    st.write("💡 *Strategy:* Good for portfolio diversification")
 
             # Volatility Analysis with Risk Assessment
             st.subheader("📉 Volatility Comparison")
@@ -376,10 +273,10 @@ def stock_comparison():
 
             if vol1 > vol2:
                 st.warning(f"{stock1} is {vol1/vol2:.1f}x more volatile than {stock2}")
-                st.write("💡 **Consider:** Higher risk/reward potential in", stock1)
+                st.write("💡 *Consider:* Higher risk/reward potential in", stock1)
             else:
                 st.info(f"{stock2} is {vol2/vol1:.1f}x more volatile than {stock1}")
-                st.write("💡 **Consider:**", stock2, "might offer better short-term trading opportunities")
+                st.write("💡 *Consider:*", stock2, "might offer better short-term trading opportunities")
 
             # Momentum Analysis with Trend Insights
             st.subheader("🚀 Momentum Analysis")
@@ -396,49 +293,24 @@ def stock_comparison():
 
             if momentum1 > momentum2:
                 st.success(f"{stock1} shows stronger upward momentum")
-                st.write("💡 **Consider:** Potential buying opportunity in", stock1)
+                st.write("💡 *Consider:* Potential buying opportunity in", stock1)
             else:
                 st.warning(f"{stock2} demonstrates better recent performance")
-                st.write("💡 **Consider:** Investigate", stock2, "for potential investments")
+                st.write("💡 *Consider:* Investigate", stock2, "for potential investments")
 
             # Final Recommendations
             st.subheader("💡 Investment Recommendations")
             if correlation > 0.7 and abs(momentum1 - momentum2) > 5:
-                st.success("**Pairs Trading Opportunity**")
+                st.success("*Pairs Trading Opportunity*")
                 st.write("- Buy the outperforming stock")
                 st.write("- Short the underperforming stock")
             elif vol1 > 5 and vol2 > 5:
-                st.warning("**High Volatility Alert**")
+                st.warning("*High Volatility Alert*")
                 st.write("- Consider options strategies")
                 st.write("- Implement stop-loss orders")
             else:
-                st.info("**Diversification Opportunity**")
+                st.info("*Diversification Opportunity*")
                 st.write("- Consider balanced portfolio allocation")
 
         else:
             st.warning("⚠ Failed to fetch comparison data")
-
-# --------------------------
-# Main App Logic
-# --------------------------
-
-# Sidebar Navigation
-st.sidebar.title("📌 Navigation")
-st.sidebar.markdown("---")  # Adds a horizontal line for separation
-
-# Sidebar Sections
-st.sidebar.markdown("### 📊 Dashboard")
-page = st.sidebar.radio("", ["🏠 Home", "📊 Stock Market Dashboard", "🚨 Price Alert", "🔄 Stock Comparison"])
-
-# Check if user is logged in
-if st.session_state.user:
-    if page == "🏠 Home":
-        home_page()
-    elif page == "📊 Stock Market Dashboard":
-        stock_market_dashboard()
-    elif page == "🚨 Price Alert":
-        price_alert()
-    elif page == "🔄 Stock Comparison":
-        stock_comparison()
-else:
-    home_page()

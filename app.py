@@ -11,6 +11,37 @@ from sklearn.preprocessing import StandardScaler
 # Set Page Configuration
 st.set_page_config(page_title="Stock Market App", layout="wide")
 
+# Custom CSS for Sidebar Blocks
+st.markdown(
+    """
+    <style>
+    .sidebar .block-container {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+    .sidebar .stButton>button {
+        width: 100%;
+        padding: 10px;
+        border-radius: 5px;
+        background-color: #f0f2f6;
+        border: 1px solid #ccc;
+        text-align: left;
+        font-size: 16px;
+        color: #333;
+    }
+    .sidebar .stButton>button:hover {
+        background-color: #e2e6ea;
+        border-color: #bbb;
+    }
+    .sidebar .stMarkdown {
+        margin-bottom: 0;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
+
 # API Key
 API_KEY = "B1N3W1H7PD3F8ZRG"
 
@@ -42,9 +73,19 @@ if "alerts" not in st.session_state:
 st.sidebar.title("📌 Navigation")
 st.sidebar.markdown("---")  # Adds a horizontal line for separation
 
-# Sidebar Sections
-st.sidebar.markdown("### 📊 Dashboard")
-page = st.sidebar.radio("", ["🏠 Home", "📊 Stock Market Dashboard", "🚨 Price Alert", "🔄 Stock Comparison"], index=1)
+# Sidebar Sections as Blocks
+if st.sidebar.button("🏠 Home"):
+    st.session_state.page = "🏠 Home"
+if st.sidebar.button("📊 Stock Market Dashboard"):
+    st.session_state.page = "📊 Stock Market Dashboard"
+if st.sidebar.button("🚨 Price Alert"):
+    st.session_state.page = "🚨 Price Alert"
+if st.sidebar.button("🔄 Stock Comparison"):
+    st.session_state.page = "🔄 Stock Comparison"
+
+# Set default page if not set
+if "page" not in st.session_state:
+    st.session_state.page = "📊 Stock Market Dashboard"
 
 # Additional Information Section
 st.sidebar.markdown("---")
@@ -80,11 +121,11 @@ Version: 1.0.0
 """)
 
 # Home Page
-if page == "🏠 Home":
+if st.session_state.page == "🏠 Home":
     st.image("https://source.unsplash.com/featured/?stocks,market", use_column_width=True)
 
 # Stock Market Dashboard
-elif page == "📊 Stock Market Dashboard":
+elif st.session_state.page == "📊 Stock Market Dashboard":
     st.title("📊 Stock Market Dashboard")
     
     selected_company = st.selectbox("📌 Select a Company", list(companies.keys()))
@@ -170,7 +211,7 @@ elif page == "📊 Stock Market Dashboard":
                 st.warning("💡 Recommendation: Do not invest at this time")
 
 # Price Alert Section
-elif page == "🚨 Price Alert":
+elif st.session_state.page == "🚨 Price Alert":
     st.title("🚨 Price Alert")
 
     if "alerts" not in st.session_state:
@@ -222,7 +263,7 @@ elif page == "🚨 Price Alert":
                 st.warning(f"⚠ Couldn't fetch data for {alert['company']}")
 
 # Stock Comparison Section (Updated)
-elif page == "🔄 Stock Comparison":
+elif st.session_state.page == "🔄 Stock Comparison":
     st.title("🔄 Advanced Stock Comparison")
 
     company_list = list(companies.keys())
@@ -266,13 +307,13 @@ elif page == "🔄 Stock Comparison":
             with col2:
                 if correlation > 0.8:
                     st.success("Strong Positive Correlation")
-                    st.write("💡 Strategy: Consider pairs trading or sector-based investing")
+                    st.write("💡 *Strategy:* Consider pairs trading or sector-based investing")
                 elif correlation < -0.8:
                     st.warning("Strong Negative Correlation")
-                    st.write("💡 Strategy: Potential hedging opportunity")
+                    st.write("💡 *Strategy:* Potential hedging opportunity")
                 else:
                     st.info("Weak Correlation")
-                    st.write("💡 Strategy: Good for portfolio diversification")
+                    st.write("💡 *Strategy:* Good for portfolio diversification")
 
             # Volatility Analysis with Risk Assessment
             st.subheader("📉 Volatility Comparison")
@@ -289,10 +330,10 @@ elif page == "🔄 Stock Comparison":
 
             if vol1 > vol2:
                 st.warning(f"{stock1} is {vol1/vol2:.1f}x more volatile than {stock2}")
-                st.write("💡 Consider: Higher risk/reward potential in", stock1)
+                st.write("💡 *Consider:* Higher risk/reward potential in", stock1)
             else:
                 st.info(f"{stock2} is {vol2/vol1:.1f}x more volatile than {stock1}")
-                st.write("💡 Consider:", stock2, "might offer better short-term trading opportunities")
+                st.write("💡 *Consider:*", stock2, "might offer better short-term trading opportunities")
 
             # Momentum Analysis with Trend Insights
             st.subheader("🚀 Momentum Analysis")
@@ -309,24 +350,25 @@ elif page == "🔄 Stock Comparison":
 
             if momentum1 > momentum2:
                 st.success(f"{stock1} shows stronger upward momentum")
-                st.write("💡 Consider: Potential buying opportunity in", stock1)
+                st.write("💡 *Consider:* Potential buying opportunity in", stock1)
             else:
                 st.warning(f"{stock2} demonstrates better recent performance")
-                st.write("💡 Consider: Investigate", stock2, "for potential investments")
+                st.write("💡 *Consider:* Investigate", stock2, "for potential investments")
 
             # Final Recommendations
             st.subheader("💡 Investment Recommendations")
             if correlation > 0.7 and abs(momentum1 - momentum2) > 5:
-                st.success("Pairs Trading Opportunity")
+                st.success("*Pairs Trading Opportunity*")
                 st.write("- Buy the outperforming stock")
                 st.write("- Short the underperforming stock")
             elif vol1 > 5 and vol2 > 5:
-                st.warning("High Volatility Alert")
+                st.warning("*High Volatility Alert*")
                 st.write("- Consider options strategies")
                 st.write("- Implement stop-loss orders")
             else:
-                st.info("Diversification Opportunity")
+                st.info("*Diversification Opportunity*")
                 st.write("- Consider balanced portfolio allocation")
 
         else:
             st.warning("⚠ Failed to fetch comparison data")
+            

@@ -42,34 +42,56 @@ if "alerts" not in st.session_state:
 st.sidebar.title("📌 Navigation")
 st.sidebar.markdown("---")  # Adds a horizontal line for separation
 
-# Sidebar Sections
-st.sidebar.markdown("### 📊 Dashboard")
-page = st.sidebar.radio("", ["🏠 Home", "📊 Stock Market Dashboard", "🚨 Price Alert", "🔄 Stock Comparison"], index=1)
+# Theme Selector
+st.sidebar.markdown("### 🎨 Theme Selector")
+theme = st.sidebar.selectbox("Choose Theme", ["Light", "Dark"], index=1)
+if theme == "Dark":
+    st.sidebar.markdown("🔵 Dark Mode Enabled")
+else:
+    st.sidebar.markdown("⚪ Light Mode Enabled")
 
-# Additional Information Section
-st.sidebar.markdown("---")
-st.sidebar.markdown("### ℹ Information")
-st.sidebar.info("""
-This app provides real-time stock market data, price alerts, and advanced stock comparison tools. 
-Use the navigation above to explore different features.
-""")
+# Dashboard Section with Expander
+with st.sidebar.expander("📊 Dashboard", expanded=True):
+    page = st.radio("", ["🏠 Home", "📊 Stock Market Dashboard", "🚨 Price Alert", "🔄 Stock Comparison"])
 
-# API Information Section
+# Progress Bar for App Usage
 st.sidebar.markdown("---")
-st.sidebar.markdown("### 🔑 API Information")
-st.sidebar.info("""
-Data is fetched using the Alpha Vantage API. 
-For more details, visit [Alpha Vantage](https://www.alphavantage.co/).
-""")
+st.sidebar.markdown("### 📊 App Usage")
+app_usage = st.sidebar.slider("How much have you explored the app?", 0, 100, 50)
+st.sidebar.progress(app_usage)
 
-# Contact Information Section
+# Additional Information Section with Expander
+with st.sidebar.expander("ℹ Information", expanded=False):
+    st.markdown("""
+    This app provides real-time stock market data, price alerts, and advanced stock comparison tools. 
+    Use the navigation above to explore different features.
+    """)
+
+# API Information Section with Expander
+with st.sidebar.expander("🔑 API Information", expanded=False):
+    st.markdown("""
+    Data is fetched using the Alpha Vantage API. 
+    For more details, visit [Alpha Vantage](https://www.alphavantage.co/).
+    """)
+
+# Contact Information Section with Expander
+with st.sidebar.expander("📧 Contact", expanded=False):
+    st.markdown("""
+    For any queries or feedback, please contact us at:
+    - Email: support@stockmarketapp.com
+    - Phone: +1 (123) 456-7890
+    """)
+
+# Feedback Section
 st.sidebar.markdown("---")
-st.sidebar.markdown("### 📧 Contact")
-st.sidebar.info("""
-For any queries or feedback, please contact us at:
-- Email: support@stockmarketapp.com
-- Phone: +1 (123) 456-7890
-""")
+st.sidebar.markdown("### 💬 Feedback")
+feedback = st.sidebar.slider("How would you rate this app?", 1, 5, 3)
+st.sidebar.write(f"Your Rating: {feedback} ⭐")
+
+if feedback >= 4:
+    st.sidebar.success("Thank you for your positive feedback! 😊")
+else:
+    st.sidebar.warning("We appreciate your feedback! We'll work on improving. 🙏")
 
 # Footer Section
 st.sidebar.markdown("---")
@@ -78,7 +100,6 @@ st.sidebar.info("""
 Date: 2023-10-01  
 Version: 1.0.0
 """)
-
 # Home Page
 if page == "🏠 Home":
     st.image("https://source.unsplash.com/featured/?stocks,market", use_column_width=True)

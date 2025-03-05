@@ -11,37 +11,58 @@ from sklearn.preprocessing import StandardScaler
 # Set Page Configuration
 st.set_page_config(page_title="Stock Market App", layout="wide")
 
-# Custom CSS for Sidebar Blocks
+# Custom CSS for Sidebar Navigation
 st.markdown(
     """
     <style>
-    .sidebar .block-container {
-        display: flex;
-        flex-direction: column;
-        gap: 10px;
-    }
-    .sidebar .stButton>button {
+    .nav-item {
+        padding: 12px 15px;
+        border-bottom: 1px solid #e0e0e0;
+        cursor: pointer;
+        transition: background-color 0.2s;
         width: 100%;
-        padding: 10px;
-        border-radius: 5px;
-        background-color: #f0f2f6;
-        border: 1px solid #ccc;
         text-align: left;
-        font-size: 16px;
-        color: #333;
+        font-size: 15px;
     }
-    .sidebar .stButton>button:hover {
-        background-color: #e2e6ea;
-        border-color: #bbb;
+    .nav-item:last-child {
+        border-bottom: none;
     }
-    .sidebar .stMarkdown {
-        margin-bottom: 0;
+    .nav-item:hover {
+        background-color: #f5f5f5;
+    }
+    .nav-item.active {
+        background-color: #e3f2fd;
+        font-weight: 500;
     }
     </style>
     """,
     unsafe_allow_html=True,
 )
 
+# Sidebar Navigation
+st.sidebar.title("📌 Navigation")
+st.sidebar.markdown("---")
+
+# Navigation Items
+pages = {
+    "🏠 Home": "home",
+    "📊 Stock Market Dashboard": "dashboard",
+    "🚨 Price Alert": "alert",
+    "🔄 Stock Comparison": "comparison"
+}
+
+current_page = st.session_state.get("current_page", "dashboard")
+
+for page_name, page_id in pages.items():
+    is_active = current_page == page_id
+    class_name = "nav-item active" if is_active else "nav-item"
+    
+    st.sidebar.markdown(
+        f'<div class="{class_name}" onclick="window.streamlitSessionState.setItem(\'current_page\', \'{page_id}\'); window.location.reload()">{page_name}</div>',
+        unsafe_allow_html=True
+    )
+
+# Additional Sections (keep your existing information sections)...
 # API Key
 API_KEY = "B1N3W1H7PD3F8ZRG"
 

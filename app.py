@@ -437,4 +437,49 @@ elif page == "🔄 Stock Comparison":
             })
             fig_vol = px.bar(vol_df, x="Stock", y="Volatility", 
                             color="Stock", template="plotly_dark",
-                            title="Price Volatility (Standard Deviation
+                            title="Price Volatility (Standard Deviation of Daily Returns)")  # Fixed line
+            st.plotly_chart(fig_vol)
+
+            if vol1 > vol2:
+                st.warning(f"{stock1} is {vol1/vol2:.1f}x more volatile than {stock2}")
+                st.write("💡 **Consider:** Higher risk/reward potential in", stock1)
+            else:
+                st.info(f"{stock2} is {vol2/vol1:.1f}x more volatile than {stock1}")
+                st.write("💡 **Consider:**", stock2, "might offer better short-term trading opportunities")
+
+            # Momentum Analysis with Trend Insights
+            st.subheader("🚀 Momentum Analysis")
+            momentum1 = (comparison_df[stock1].iloc[-1] / comparison_df[stock1].iloc[0] - 1) * 100
+            momentum2 = (comparison_df[stock2].iloc[-1] / comparison_df[stock2].iloc[0] - 1) * 100
+            mom_df = pd.DataFrame({
+                "Stock": [stock1, stock2],
+                "Momentum": [momentum1, momentum2]
+            })
+            fig_momentum = px.bar(mom_df, x="Stock", y="Momentum", 
+                                 color="Stock", template="plotly_dark",
+                                 title="Percentage Change Over Period")
+            st.plotly_chart(fig_momentum)
+
+            if momentum1 > momentum2:
+                st.success(f"{stock1} shows stronger upward momentum")
+                st.write("💡 **Consider:** Potential buying opportunity in", stock1)
+            else:
+                st.warning(f"{stock2} demonstrates better recent performance")
+                st.write("💡 **Consider:** Investigate", stock2, "for potential investments")
+
+            # Final Recommendations
+            st.subheader("💡 Investment Recommendations")
+            if correlation > 0.7 and abs(momentum1 - momentum2) > 5:
+                st.success("**Pairs Trading Opportunity**")
+                st.write("- Buy the outperforming stock")
+                st.write("- Short the underperforming stock")
+            elif vol1 > 5 and vol2 > 5:
+                st.warning("**High Volatility Alert**")
+                st.write("- Consider options strategies")
+                st.write("- Implement stop-loss orders")
+            else:
+                st.info("**Diversification Opportunity**")
+                st.write("- Consider balanced portfolio allocation")
+
+        else:
+            st.warning("⚠ Failed to fetch comparison data")

@@ -315,6 +315,3 @@ elif page == "🔄 Stock Comparison":
         else:
             st.warning("⚠ Failed to fetch comparison data")
 
-
-add sign in page for this code:
-it should work very efficiently without any errors

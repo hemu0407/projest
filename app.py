@@ -11,7 +11,73 @@ from sklearn.preprocessing import StandardScaler
 # Set Page Configuration
 st.set_page_config(page_title="Stock Market App", layout="wide")
 
-# Custom CSS for Sidebar Blocks
+# Custom CSS for Login Page
+st.markdown(
+    """
+    <style>
+    .login-container {
+        max-width: 400px;
+        padding: 2rem;
+        margin: 0 auto;
+        border: 1px solid #ddd;
+        border-radius: 10px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+    .login-title {
+        text-align: center;
+        margin-bottom: 2rem;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
+
+# User Database (Replace with a real database in production)
+USERS = {
+    "user1": {"password": "pass1", "name": "John Doe"},
+    "user2": {"password": "pass2", "name": "Jane Smith"}
+}
+
+# Authentication Functions
+def authenticate(username, password):
+    """Check if the username and password are valid."""
+    if username in USERS and USERS[username]['password'] == password:
+        return True
+    return False
+
+def login_page():
+    """Display the login page and handle authentication."""
+    st.markdown("<div class='login-container'>", unsafe_allow_html=True)
+    st.markdown("<h2 class='login-title'>🔒 Stock App Login</h2>", unsafe_allow_html=True)
+    
+    username = st.text_input("Username")
+    password = st.text_input("Password", type="password")
+    
+    if st.button("Login"):
+        if authenticate(username, password):
+            st.session_state.authenticated = True
+            st.session_state.current_user = USERS[username]['name']
+            st.success("Login successful! Redirecting...")
+            st.experimental_rerun()
+        else:
+            st.error("Invalid username/password")
+    
+    st.markdown("</div>", unsafe_allow_html=True)
+    st.stop()
+
+# Check Authentication
+if "authenticated" not in st.session_state:
+    st.session_state.authenticated = False
+
+# Show login page if not authenticated
+if not st.session_state.authenticated:
+    login_page()
+
+# =================================================================
+# REST OF YOUR ORIGINAL CODE STARTS HERE (Only for authenticated users)
+# =================================================================
+
+# Custom CSS for Sidebar Blocks (Original CSS remains same)
 st.markdown(
     """
     <style>
@@ -42,7 +108,17 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-# API Key
+# Add logout button to sidebar
+st.sidebar.markdown("---")
+if st.sidebar.button("🚪 Logout"):
+    st.session_state.authenticated = False
+    st.session_state.clear()
+    st.experimental_rerun()
+
+# Show welcome message
+st.sidebar.markdown(f"### 👋 Welcome, {st.session_state.current_user}!")
+
+# API Key and other original code continues...
 API_KEY = "B1N3W1H7PD3F8ZRG"
 
 # Stock Symbols
@@ -128,7 +204,7 @@ if st.session_state.page == "🏠 Home":
 elif st.session_state.page == "📊 Stock Market Dashboard":
     st.title("📊 Stock Market Dashboard")
     
-    selected_company = st.selectbox("📌 Select a Company", list(companies.keys()))
+    selected_company = st.selectbox("📌 Select a Company", list(companies.keys())
 
     if st.button("🔍 Fetch Stock Data"):
         stock_data = get_stock_data(companies[selected_company])
@@ -307,13 +383,13 @@ elif st.session_state.page == "🔄 Stock Comparison":
             with col2:
                 if correlation > 0.8:
                     st.success("Strong Positive Correlation")
-                    st.write("💡 Strategy: Consider pairs trading or sector-based investing")
+                    st.write("💡 *Strategy:* Consider pairs trading or sector-based investing")
                 elif correlation < -0.8:
                     st.warning("Strong Negative Correlation")
-                    st.write("💡 Strategy: Potential hedging opportunity")
+                    st.write("💡 *Strategy:* Potential hedging opportunity")
                 else:
                     st.info("Weak Correlation")
-                    st.write("💡 Strategy: Good for portfolio diversification")
+                    st.write("💡 *Strategy:* Good for portfolio diversification")
 
             # Volatility Analysis with Risk Assessment
             st.subheader("📉 Volatility Comparison")
@@ -330,10 +406,10 @@ elif st.session_state.page == "🔄 Stock Comparison":
 
             if vol1 > vol2:
                 st.warning(f"{stock1} is {vol1/vol2:.1f}x more volatile than {stock2}")
-                st.write("💡 Consider: Higher risk/reward potential in", stock1)
+                st.write("💡 *Consider:* Higher risk/reward potential in", stock1)
             else:
                 st.info(f"{stock2} is {vol2/vol1:.1f}x more volatile than {stock1}")
-                st.write("💡 Consider:", stock2, "might offer better short-term trading opportunities")
+                st.write("💡 *Consider:*", stock2, "might offer better short-term trading opportunities")
 
             # Momentum Analysis with Trend Insights
             st.subheader("🚀 Momentum Analysis")
@@ -350,23 +426,23 @@ elif st.session_state.page == "🔄 Stock Comparison":
 
             if momentum1 > momentum2:
                 st.success(f"{stock1} shows stronger upward momentum")
-                st.write("💡 Consider: Potential buying opportunity in", stock1)
+                st.write("💡 *Consider:* Potential buying opportunity in", stock1)
             else:
                 st.warning(f"{stock2} demonstrates better recent performance")
-                st.write("💡 Consider: Investigate", stock2, "for potential investments")
+                st.write("💡 *Consider:* Investigate", stock2, "for potential investments")
 
             # Final Recommendations
             st.subheader("💡 Investment Recommendations")
             if correlation > 0.7 and abs(momentum1 - momentum2) > 5:
-                st.success("Pairs Trading Opportunity")
+                st.success("*Pairs Trading Opportunity*")
                 st.write("- Buy the outperforming stock")
                 st.write("- Short the underperforming stock")
             elif vol1 > 5 and vol2 > 5:
-                st.warning("High Volatility Alert")
+                st.warning("*High Volatility Alert*")
                 st.write("- Consider options strategies")
                 st.write("- Implement stop-loss orders")
             else:
-                st.info("Diversification Opportunity")
+                st.info("*Diversification Opportunity*")
                 st.write("- Consider balanced portfolio allocation")
 
         else:

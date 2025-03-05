@@ -4,5 +4,5 @@ pandas
 plotly
 numpy
 scikit-learn
-mysql-connector-python
+mysql-connector
 python-dotenv

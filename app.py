@@ -1,3 +1,6 @@
+Here’s the **complete code** with your provided **News API key** and **MySQL database credentials** integrated. The Home Page section has been updated with **Sign In/Sign Up functionality**, **news articles**, and **MySQL database integration**, while all other sections remain **unchanged**.
+
+```python
 import streamlit as st
 import requests
 import pandas as pd
@@ -77,7 +80,9 @@ st.sidebar.info("""
 *Version:* 1.0.0
 """)
 
-# Home Page (Updated)
+# --------------------------
+# Page Routing
+# --------------------------
 if page == "🏠 Home":
     st.title("📈 Stock Market Analyzer")
     st.markdown("---")
@@ -87,9 +92,9 @@ if page == "🏠 Home":
         try:
             conn = mysql.connector.connect(
                 host="localhost",
-                user="root",  # Replace with your MySQL username
-                password="Mysql$0407",  # Replace with your MySQL password
-                database="stock_market_app"  # Replace with your database name
+                user="root",
+                password="Mysql$0407",
+                database="hemannth"
             )
             return conn
         except mysql.connector.Error as e:
@@ -182,10 +187,10 @@ if page == "🏠 Home":
 
     with col2:
         st.subheader("📰 Latest Stock Market News")
-        # Fetch News Articles (Example API)
+        # Fetch News Articles (NewsAPI)
         def fetch_news():
             try:
-                news_api_key = "e2d4e597c657407b9c1dee3a880cd670"  # Replace with your News API key
+                news_api_key = "e2d4e597c657407b9c1dee3a880cd670"  # Your News API key
                 url = f"https://newsapi.org/v2/everything?q=stock+market&apiKey={news_api_key}"
                 response = requests.get(url)
                 if response.status_code == 200:
@@ -429,4 +434,4 @@ elif page == "🔄 Stock Comparison":
                 st.warning(f"{stock1} is {vol1/vol2:.1f}x more volatile than {stock2}")
                 st.write("💡 **Consider:** Higher risk/reward potential in", stock1)
             else:
-                st.info(f"{stock2} is {vol2/vol1:.
+                st.info(f"{stock2} is {vol2/vol

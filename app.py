@@ -88,10 +88,10 @@ if page == "🏠 Home":
     def create_connection():
         try:
             conn = mysql.connector.connect(
-                host="localhost",
+                host="127.0.0.1",
                 user="root",
                 password="Mysql$0407",
-                database="hemannth"
+                database="stock_market_app"
             )
             return conn
         except mysql.connector.Error as e:

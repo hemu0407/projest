@@ -369,7 +369,59 @@ if st.session_state.page == "🏠 Home":
     st.subheader("📰 Latest Market News")
     
     news_articles = fetch_news()
-    
+    if news_articles:
+        cols = st.columns(2)
+        for idx, article in enumerate(news_articles):
+            with cols[idx % 2]:
+                published_at = datetime.strptime(article['publishedAt'], '%Y-%m-%dT%H:%M:%SZ').strftime('%b %d, %Y %H:%M')
+                
+                st.markdown(
+                    f"""
+                    <a href="{article['url']}" target="_blank" style="text-decoration: none; color: inherit;">
+                        <div class="news-card">
+                            <img src="{article['urlToImage'] or 'https://source.unsplash.com/featured/?finance,news'}" class="news-image">
+                            <div class="news-content">
+                                <div class="news-source">
+                                    <img src="https://logo.clearbit.com/{article['source']['name'].lower().replace(' ', '')}.com" 
+                                         class="source-logo" 
+                                         onerror="this.style.display='none'">
+                                    <span>{article['source']['name']} • {published_at}</span>
+                                </div>
+                                <h4>{article['title']}</h4>
+                                <p style="color: #444; line-height: 1.4">{article['description'] or ''}</p>
+                            </div>
+                        </div>
+                    </a>
+                    """,
+                    unsafe_allow_html=True
+                )
+    else:
+        st.warning("Unable to fetch news at this moment. Please try again later.")
+
+    # Additional Sections
+    st.markdown("---")
+    with st.container():
+        st.subheader("📈 Why Choose Market Pulse?")
+        st.markdown("""
+        <div class="why-choose-us">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 2rem;">
+                <div>
+                    <h4>💡 Intelligent Analytics</h4>
+                    <p>AI-powered market predictions and trend analysis powered by machine learning models</p>
+                </div>
+                <div>
+                    <h4>🔔 Real-Time Alerts</h4>
+                    <p>Customizable price alerts and breaking news notifications</p>
+                </div>
+                <div>
+                    <h4>🌐 Global Coverage</h4>
+                    <p>Track markets across multiple exchanges worldwide</p>
+                </div>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+
+
 # Stock Market Dashboard
 if st.session_state.page == "📊 Stock Market Dashboard":
     st.title("📊 Stock Market Dashboard")

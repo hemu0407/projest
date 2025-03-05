@@ -420,6 +420,28 @@ if st.session_state.page == "🏠 Home":
             </div>
         </div>
         """, unsafe_allow_html=True)
+
+    # Add copyright footer here
+    st.markdown(
+        """
+        <style>
+        .footer {
+            text-align: center;
+            padding: 1.5rem;
+            color: #666;
+            font-size: 0.9rem;
+            margin-top: 2rem;
+            border-top: 1px solid #eee;
+        }
+        </style>
+        """,
+        unsafe_allow_html=True
+    )
+
+    st.markdown(
+        f'<div class="footer">© {datetime.now().year} Market Pulse. All rights reserved.</div>',
+        unsafe_allow_html=True
+    )
     
 # Stock Market Dashboard
 elif st.session_state.page == "📊 Stock Market Dashboard":

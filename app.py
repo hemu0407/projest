@@ -396,7 +396,7 @@ def fetch_news():
 
 
 # Stock Market Dashboard
-elif st.session_state.page == "📊 Stock Market Dashboard":
+if st.session_state.page == "📊 Stock Market Dashboard":
     st.title("📊 Stock Market Dashboard")
     
     selected_company = st.selectbox("📌 Select a Company", list(companies.keys()))

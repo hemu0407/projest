@@ -88,7 +88,7 @@ elif page == "🏠 Home":
             conn = mysql.connector.connect(
                 host="localhost",
                 user="root",  # Replace with your MySQL username
-                password="password",  # Replace with your MySQL password
+                password="Mysql$0407",  # Replace with your MySQL password
                 database="stock_market_app"  # Replace with your database name
             )
             return conn

@@ -45,7 +45,7 @@ st.sidebar.markdown("---")
 
 # Navigation Items
 pages = {
-    "🏠 Home": "home",
+    "🏠 Home": "🏠 Home",
     "📊 Stock Market Dashboard": "dashboard",
     "🚨 Price Alert": "alert",
     "🔄 Stock Comparison": "comparison"

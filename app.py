@@ -201,6 +201,181 @@ Version: 1.0.0
 
 # Home Page
 if st.session_state.page == "🏠 Home":
+    # Add this at the top with other imports
+from datetime import datetime
+
+# NewsAPI Configuration (Get your free API key from https://newsapi.org/)
+NEWS_API_KEY = "YOUR_NEWS_API_KEY"  # Replace with your actual key
+
+def fetch_news():
+    """Fetch financial news from NewsAPI"""
+    url = f"https://newsapi.org/v2/everything?q=stocks&apiKey={NEWS_API_KEY}&sortBy=publishedAt&language=en"
+    try:
+        response = requests.get(url)
+        news_data = response.json()
+        return news_data.get('articles', [])[:6]  # Get first 6 articles
+    except Exception as e:
+        st.error(f"Error fetching news: {str(e)}")
+        return []
+
+# Update the Home Page section
+if st.session_state.page == "🏠 Home":
+    # Main Header Section
+    st.markdown(
+        """
+        <style>
+        .main-header {
+            text-align: center;
+            padding: 4rem 1rem;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: white;
+            border-radius: 15px;
+            margin-bottom: 2rem;
+        }
+        
+        .news-card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transition: transform 0.2s;
+            margin-bottom: 1.5rem;
+            overflow: hidden;
+        }
+        
+        .news-card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .news-image {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            border-top-left-radius: 12px;
+            border-top-right-radius: 12px;
+        }
+        
+        .news-content {
+            padding: 1.5rem;
+        }
+        
+        .news-source {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #666;
+            margin-bottom: 0.5rem;
+        }
+        
+        .source-logo {
+            width: 20px;
+            height: 20px;
+            border-radius: 4px;
+        }
+        </style>
+        """,
+        unsafe_allow_html=True
+    )
+
+    # Main Header
+    st.markdown(
+        '<div class="main-header">'
+        '<h1 style="font-size: 3.5rem; margin-bottom: 1rem;">📈 Market Pulse</h1>'
+        '<p style="font-size: 1.2rem; opacity: 0.9;">Your Gateway to Real-Time Financial Intelligence</p>'
+        '</div>',
+        unsafe_allow_html=True
+    )
+
+    # App Features Grid
+    with st.container():
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            st.markdown(
+                """
+                <div style="text-align: center; padding: 1.5rem; background: white; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.1)">
+                <h3>📊 Live Market Data</h3>
+                <p>Real-time stock prices, charts, and technical indicators</p>
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
+        with col2:
+            st.markdown(
+                """
+                <div style="text-align: center; padding: 1.5rem; background: white; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.1)">
+                <h3>🚨 Smart Alerts</h3>
+                <p>Custom price alerts and AI-powered market insights</p>
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
+        with col3:
+            st.markdown(
+                """
+                <div style="text-align: center; padding: 1.5rem; background: white; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.1)">
+                <h3>📰 Market News</h3>
+                <p>Curated financial news from trusted sources</p>
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
+
+    # Real-Time News Section
+    st.markdown("---")
+    st.subheader("📰 Latest Market News")
+    
+    news_articles = fetch_news()
+    
+    if news_articles:
+        cols = st.columns(2)
+        for idx, article in enumerate(news_articles):
+            with cols[idx % 2]:
+                published_at = datetime.strptime(article['publishedAt'], '%Y-%m-%dT%H:%M:%SZ').strftime('%b %d, %Y %H:%M')
+                
+                st.markdown(
+                    f"""
+                    <a href="{article['url']}" target="_blank" style="text-decoration: none; color: inherit;">
+                    <div class="news-card">
+                        <img src="{article['urlToImage'] or 'https://source.unsplash.com/featured/?finance,news'}" class="news-image">
+                        <div class="news-content">
+                            <div class="news-source">
+                                <img src="https://logo.clearbit.com/{article['source']['name'].lower().replace(' ', '')}.com" 
+                                     class="source-logo" 
+                                     onerror="this.style.display='none'">
+                                <span>{article['source']['name']} • {published_at}</span>
+                            </div>
+                            <h4>{article['title']}</h4>
+                            <p style="color: #444; line-height: 1.4">{article['description'] or ''}</p>
+                        </div>
+                    </div>
+                    </a>
+                    """,
+                    unsafe_allow_html=True
+                )
+    else:
+        st.warning("Unable to fetch news at this moment. Please try again later.")
+
+    # Additional Sections
+    st.markdown("---")
+    with st.container():
+        st.subheader("📈 Why Choose Market Pulse?")
+        st.markdown("""
+        <div style="background: #f8f9fa; padding: 2rem; border-radius: 12px;">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 2rem;">
+                <div>
+                    <h4>💡 Intelligent Analytics</h4>
+                    <p>AI-powered market predictions and trend analysis powered by machine learning models</p>
+                </div>
+                <div>
+                    <h4>🔔 Real-Time Alerts</h4>
+                    <p>Customizable price alerts and breaking news notifications</p>
+                </div>
+                <div>
+                    <h4>🌐 Global Coverage</h4>
+                    <p>Track markets across multiple exchanges worldwide</p>
+                </div>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
     st.image("https://source.unsplash.com/featured/?stocks,market", use_column_width=True)
 
 # Stock Market Dashboard

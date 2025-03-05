@@ -4,91 +4,12 @@ import pandas as pd
 import plotly.express as px
 import numpy as np
 from datetime import datetime, timedelta
-import streamlit as st
-import sqlite3
-import hashlib
 
-# Function to hash passwords
-def hash_password(password):
-    return hashlib.sha256(password.encode()).hexdigest()
-
-# Function to create users table
-def create_users_table():
-    conn = sqlite3.connect("users.db")
-    c = conn.cursor()
-    c.execute("""
-        CREATE TABLE IF NOT EXISTS users (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            username TEXT UNIQUE,
-            password TEXT
-        )
-    """)
-    conn.commit()
-    conn.close()
-
-# Function to register user
-def register_user(username, password):
-    conn = sqlite3.connect("users.db")
-    c = conn.cursor()
-    try:
-        c.execute("INSERT INTO users (username, password) VALUES (?, ?)", (username, hash_password(password)))
-        conn.commit()
-        return True
-    except sqlite3.IntegrityError:
-        return False
-    finally:
-        conn.close()
-
-# Function to verify login
-def login_user(username, password):
-    conn = sqlite3.connect("users.db")
-    c = conn.cursor()
-    c.execute("SELECT password FROM users WHERE username = ?", (username,))
-    user = c.fetchone()
-    conn.close()
-    if user and user[0] == hash_password(password):
-        return True
-    return False
-
-# Create users table on startup
-create_users_table()
-
-# Streamlit UI
-st.title("Login Page")
-
-menu = ["Login", "Register"]
-choice = st.sidebar.selectbox("Menu", menu)
-
-if choice == "Login":
-    st.subheader("Login")
-    username = st.text_input("Username")
-    password = st.text_input("Password", type="password")
-    
-    if st.button("Login"):
-        if login_user(username, password):
-            st.success(f"Welcome {username}!")
-        else:
-            st.error("Invalid username or password")
-
-elif choice == "Register":
-    st.subheader("Register")
-    new_username = st.text_input("New Username")
-    new_password = st.text_input("New Password", type="password")
-    confirm_password = st.text_input("Confirm Password", type="password")
-    
-    if st.button("Register"):
-        if new_password == confirm_password:
-            if register_user(new_username, new_password):
-                st.success("Registration successful! You can now log in.")
-            else:
-                st.error("Username already exists!")
-        else:
-            st.error("Passwords do not match!")
 # Set Page Configuration
 st.set_page_config(page_title="Stock Market App", layout="wide")
 
 # API Key
-API_KEY = "MVVQ3GM2LROFV9JI"
+API_KEY = "B1N3W1H7PD3F8ZRG"
 
 # Stock Symbols
 companies = {
@@ -159,166 +80,6 @@ Version: 1.0.0
 if page == "🏠 Home":
     st.image("https://source.unsplash.com/featured/?stocks,market", use_column_width=True)
 
-# The rest of your 475-line code remains unchanged...
-
-
-elif page == "🏠 Home":
-    st.title("📈 Stock Market Analyzer")
-    st.markdown("---")
-
-    # Database Connection (MySQL)
-    import mysql.connector
-
-    def create_connection():
-        try:
-            conn = mysql.connector.connect(
-                host="localhost",
-                user="root",  # Replace with your MySQL username
-                password="password",  # Replace with your MySQL password
-                database="stock_market_app"  # Replace with your database name
-            )
-            return conn
-        except mysql.connector.Error as e:
-            st.error(f"Error connecting to MySQL: {e}")
-            return None
-
-    # Create Users Table if not exists
-    def create_users_table():
-        conn = create_connection()
-        if conn:
-            cursor = conn.cursor()
-            cursor.execute("""
-                CREATE TABLE IF NOT EXISTS users (
-                    id INT AUTO_INCREMENT PRIMARY KEY,
-                    username VARCHAR(50) UNIQUE NOT NULL,
-                    password VARCHAR(100) NOT NULL,
-                    email VARCHAR(100) UNIQUE NOT NULL
-                )
-            """)
-            conn.commit()
-            cursor.close()
-            conn.close()
-
-    # Initialize Users Table
-    create_users_table()
-
-    # Sign Up Function
-    def sign_up(username, password, email):
-        conn = create_connection()
-        if conn:
-            cursor = conn.cursor()
-            try:
-                cursor.execute("""
-                    INSERT INTO users (username, password, email)
-                    VALUES (%s, %s, %s)
-                """, (username, password, email))
-                conn.commit()
-                st.success("🎉 Sign Up Successful! Please log in.")
-            except mysql.connector.Error as e:
-                st.error(f"Error: {e}")
-            finally:
-                cursor.close()
-                conn.close()
-
-    # Sign In Function
-    def sign_in(username, password):
-        conn = create_connection()
-        if conn:
-            cursor = conn.cursor()
-            cursor.execute("""
-                SELECT * FROM users WHERE username = %s AND password = %s
-            """, (username, password))
-            user = cursor.fetchone()
-            cursor.close()
-            conn.close()
-            return user
-
-    # Home Page Layout
-    col1, col2 = st.columns([1, 2])
-
-    with col1:
-        st.subheader("🔐 Sign In / Sign Up")
-        tab1, tab2 = st.tabs(["Sign In", "Sign Up"])
-
-        with tab1:
-            st.write("Already have an account? Sign in below.")
-            username = st.text_input("Username", key="signin_username")
-            password = st.text_input("Password", type="password", key="signin_password")
-            if st.button("Sign In"):
-                if username and password:
-                    user = sign_in(username, password)
-                    if user:
-                        st.session_state.user = user
-                        st.success(f"Welcome back, {user[1]}!")
-                    else:
-                        st.error("Invalid username or password.")
-                else:
-                    st.warning("Please enter both username and password.")
-
-        with tab2:
-            st.write("New user? Sign up below.")
-            new_username = st.text_input("Username", key="signup_username")
-            new_password = st.text_input("Password", type="password", key="signup_password")
-            email = st.text_input("Email", key="signup_email")
-            if st.button("Sign Up"):
-                if new_username and new_password and email:
-                    sign_up(new_username, new_password, email)
-                else:
-                    st.warning("Please fill all fields.")
-
-    with col2:
-        st.subheader("📰 Latest Stock Market News")
-        # Fetch News Articles (Example API)
-        def fetch_news():
-            try:
-                news_api_key = "YOUR_NEWS_API_KEY"  # Replace with your News API key
-                url = f"https://newsapi.org/v2/everything?q=stock+market&apiKey={news_api_key}"
-                response = requests.get(url)
-                if response.status_code == 200:
-                    return response.json()["articles"]
-                else:
-                    st.error("Failed to fetch news. Please try again later.")
-                    return []
-            except Exception as e:
-                st.error(f"Error fetching news: {e}")
-                return []
-
-        news_articles = fetch_news()
-        if news_articles:
-            for article in news_articles[:5]:  # Display top 5 articles
-                st.markdown(f"### {article['title']}")
-                st.write(f"*Source:* {article['source']['name']}")
-                st.write(f"*Published At:* {article['publishedAt']}")
-                st.write(article['description'])
-                st.markdown(f"[Read More]({article['url']})")
-                st.markdown("---")
-        else:
-            st.info("No news articles available at the moment.")
-
-    # Additional Features
-    st.subheader("🌟 Why Choose Us?")
-    st.markdown("""
-    - *Real-Time Data:* Get up-to-date stock market data.
-    - *Advanced Analysis:* Perform in-depth stock comparisons.
-    - *Price Alerts:* Never miss important price movements.
-    - *Personalized Experience:* Sign up to save your preferences and alerts.
-    """)
-
-    st.subheader("📊 Quick Stats")
-    col1, col2, col3 = st.columns(3)
-    with col1:
-        st.metric("Total Users", "1,234")  # Replace with dynamic data from DB
-    with col2:
-        st.metric("Active Alerts", "56")  # Replace with dynamic data from DB
-    with col3:
-        st.metric("Stocks Tracked", "500+")
-
-    st.subheader("📞 Contact Us")
-    st.markdown("""
-    Have questions or need support? Reach out to us:
-    - *Email:* support@stockmarketapp.com
-    - *Phone:* +1 (123) 456-7890
-    """)
 # Stock Market Dashboard
 elif page == "📊 Stock Market Dashboard":
     st.title("📊 Stock Market Dashboard")
@@ -489,13 +250,13 @@ elif page == "🔄 Stock Comparison":
             with col2:
                 if correlation > 0.8:
                     st.success("Strong Positive Correlation")
-                    st.write("💡 Strategy: Consider pairs trading or sector-based investing")
+                    st.write("💡 *Strategy:* Consider pairs trading or sector-based investing")
                 elif correlation < -0.8:
                     st.warning("Strong Negative Correlation")
-                    st.write("💡 Strategy: Potential hedging opportunity")
+                    st.write("💡 *Strategy:* Potential hedging opportunity")
                 else:
                     st.info("Weak Correlation")
-                    st.write("💡 Strategy: Good for portfolio diversification")
+                    st.write("💡 *Strategy:* Good for portfolio diversification")
 
             # Volatility Analysis with Risk Assessment
             st.subheader("📉 Volatility Comparison")
@@ -512,10 +273,10 @@ elif page == "🔄 Stock Comparison":
 
             if vol1 > vol2:
                 st.warning(f"{stock1} is {vol1/vol2:.1f}x more volatile than {stock2}")
-                st.write("💡 Consider: Higher risk/reward potential in", stock1)
+                st.write("💡 *Consider:* Higher risk/reward potential in", stock1)
             else:
                 st.info(f"{stock2} is {vol2/vol1:.1f}x more volatile than {stock1}")
-                st.write("💡 Consider:", stock2, "might offer better short-term trading opportunities")
+                st.write("💡 *Consider:*", stock2, "might offer better short-term trading opportunities")
 
             # Momentum Analysis with Trend Insights
             st.subheader("🚀 Momentum Analysis")
@@ -532,23 +293,23 @@ elif page == "🔄 Stock Comparison":
 
             if momentum1 > momentum2:
                 st.success(f"{stock1} shows stronger upward momentum")
-                st.write("💡 Consider: Potential buying opportunity in", stock1)
+                st.write("💡 *Consider:* Potential buying opportunity in", stock1)
             else:
                 st.warning(f"{stock2} demonstrates better recent performance")
-                st.write("💡 Consider: Investigate", stock2, "for potential investments")
+                st.write("💡 *Consider:* Investigate", stock2, "for potential investments")
 
             # Final Recommendations
             st.subheader("💡 Investment Recommendations")
             if correlation > 0.7 and abs(momentum1 - momentum2) > 5:
-                st.success("Pairs Trading Opportunity")
+                st.success("*Pairs Trading Opportunity*")
                 st.write("- Buy the outperforming stock")
                 st.write("- Short the underperforming stock")
             elif vol1 > 5 and vol2 > 5:
-                st.warning("High Volatility Alert")
+                st.warning("*High Volatility Alert*")
                 st.write("- Consider options strategies")
                 st.write("- Implement stop-loss orders")
             else:
-                st.info("Diversification Opportunity")
+                st.info("*Diversification Opportunity*")
                 st.write("- Consider balanced portfolio allocation")
 
         else:

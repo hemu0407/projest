@@ -204,7 +204,7 @@ if st.session_state.page == "🏠 Home":
 elif st.session_state.page == "📊 Stock Market Dashboard":
     st.title("📊 Stock Market Dashboard")
     
-selected_company = st.selectbox("📌 Select a Company", list(companies.keys()))
+    selected_company = st.selectbox("📌 Select a Company", list(companies.keys()))
 
     if st.button("🔍 Fetch Stock Data"):
         stock_data = get_stock_data(companies[selected_company])
@@ -426,24 +426,4 @@ elif st.session_state.page == "🔄 Stock Comparison":
 
             if momentum1 > momentum2:
                 st.success(f"{stock1} shows stronger upward momentum")
-                st.write("💡 *Consider:* Potential buying opportunity in", stock1)
-            else:
-                st.warning(f"{stock2} demonstrates better recent performance")
-                st.write("💡 *Consider:* Investigate", stock2, "for potential investments")
-
-            # Final Recommendations
-            st.subheader("💡 Investment Recommendations")
-            if correlation > 0.7 and abs(momentum1 - momentum2) > 5:
-                st.success("*Pairs Trading Opportunity*")
-                st.write("- Buy the outperforming stock")
-                st.write("- Short the underperforming stock")
-            elif vol1 > 5 and vol2 > 5:
-                st.warning("*High Volatility Alert*")
-                st.write("- Consider options strategies")
-                st.write("- Implement stop-loss orders")
-            else:
-                st.info("*Diversification Opportunity*")
-                st.write("- Consider balanced portfolio allocation")
-
-        else:
-            st.warning("⚠ Failed to fetch comparison data")
+                st.write("💡 *Consider:* Potential buying opportunity in",

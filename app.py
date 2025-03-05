@@ -58,12 +58,12 @@ def login_page():
             st.session_state.authenticated = True
             st.session_state.current_user = USERS[username]['name']
             st.success("Login successful! Redirecting...")
-            st.rerun()  # Use st.rerun() instead of st.experimental_rerun()
+            # No need to use st.rerun() or st.experimental_rerun()
         else:
             st.error("Invalid username/password")
     
     st.markdown("</div>", unsafe_allow_html=True)
-    st.stop()
+    st.stop()  # Stop execution to prevent access to the rest of the app
 
 # Check Authentication
 if "authenticated" not in st.session_state:

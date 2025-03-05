@@ -14,7 +14,7 @@ st.set_page_config(page_title="Stock Market App", layout="wide")
 
 # MySQL Database Configuration
 db_config = {
-    "host": "localhost",  # Change if MySQL is on a remote server
+    "host": "HARRY",  # Change if MySQL is on a remote server
     "user": "root",       # Your MySQL username
     "password": "Mysql$0407",  # Your MySQL password
     "database": "stock_market_app"  # Your database name

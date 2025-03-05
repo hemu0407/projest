@@ -38,68 +38,139 @@ def get_stock_data(symbol):
 if "alerts" not in st.session_state:
     st.session_state.alerts = []
 
-# Sidebar Navigation
-st.sidebar.title("📌 Navigation")
-st.sidebar.markdown("---")  # Adds a horizontal line for separation
+import streamlit as st
 
-# Theme Selector
-st.sidebar.markdown("### 🎨 Theme Selector")
-theme = st.sidebar.selectbox("Choose Theme", ["Light", "Dark"], index=1)
-if theme == "Dark":
-    st.sidebar.markdown("🔵 Dark Mode Enabled")
-else:
-    st.sidebar.markdown("⚪ Light Mode Enabled")
+# Custom CSS for Navigation Bar
+st.markdown(
+    """
+    <style>
+    /* Main Navigation Bar Container */
+    .nav-bar {
+        display: flex;
+        justify-content: space-around;
+        background-color: #f0f2f6;
+        padding: 10px;
+        border-radius: 10px;
+        margin-bottom: 20px;
+    }
 
-# Dashboard Section with Expander
-with st.sidebar.expander("📊 Dashboard", expanded=True):
-    page = st.radio("", ["🏠 Home", "📊 Stock Market Dashboard", "🚨 Price Alert", "🔄 Stock Comparison"])
+    /* Navigation Button Styling */
+    .nav-button {
+        padding: 10px 20px;
+        border: none;
+        background-color: transparent;
+        color: #333;
+        font-size: 16px;
+        font-weight: bold;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        border-radius: 5px;
+    }
 
-# Progress Bar for App Usage
-st.sidebar.markdown("---")
-st.sidebar.markdown("### 📊 App Usage")
-app_usage = st.sidebar.slider("How much have you explored the app?", 0, 100, 50)
-st.sidebar.progress(app_usage)
+    /* Hover Effect */
+    .nav-button:hover {
+        background-color: #0078d4;
+        color: white;
+    }
 
-# Additional Information Section with Expander
-with st.sidebar.expander("ℹ Information", expanded=False):
-    st.markdown("""
-    This app provides real-time stock market data, price alerts, and advanced stock comparison tools. 
-    Use the navigation above to explore different features.
-    """)
+    /* Active Button Styling */
+    .nav-button.active {
+        background-color: #0078d4;
+        color: white;
+    }
 
-# API Information Section with Expander
-with st.sidebar.expander("🔑 API Information", expanded=False):
-    st.markdown("""
-    Data is fetched using the Alpha Vantage API. 
-    For more details, visit [Alpha Vantage](https://www.alphavantage.co/).
-    """)
+    /* Dropdown Styling */
+    .dropdown {
+        position: relative;
+        display: inline-block;
+    }
 
-# Contact Information Section with Expander
-with st.sidebar.expander("📧 Contact", expanded=False):
-    st.markdown("""
-    For any queries or feedback, please contact us at:
-    - Email: support@stockmarketapp.com
-    - Phone: +1 (123) 456-7890
-    """)
+    .dropdown-content {
+        display: none;
+        position: absolute;
+        background-color: #f9f9f9;
+        min-width: 160px;
+        box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+        z-index: 1;
+        border-radius: 5px;
+    }
 
-# Feedback Section
-st.sidebar.markdown("---")
-st.sidebar.markdown("### 💬 Feedback")
-feedback = st.sidebar.slider("How would you rate this app?", 1, 5, 3)
-st.sidebar.write(f"Your Rating: {feedback} ⭐")
+    .dropdown-content a {
+        color: black;
+        padding: 12px 16px;
+        text-decoration: none;
+        display: block;
+    }
 
-if feedback >= 4:
-    st.sidebar.success("Thank you for your positive feedback! 😊")
-else:
-    st.sidebar.warning("We appreciate your feedback! We'll work on improving. 🙏")
+    .dropdown-content a:hover {
+        background-color: #0078d4;
+        color: white;
+    }
 
-# Footer Section
-st.sidebar.markdown("---")
-st.sidebar.markdown("### 📅 Last Updated")
-st.sidebar.info("""
-Date: 2023-10-01  
-Version: 1.0.0
-""")
+    .dropdown:hover .dropdown-content {
+        display: block;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
+
+# Navigation Bar HTML
+st.markdown(
+    """
+    <div class="nav-bar">
+        <button class="nav-button active" onclick="window.location.href='#home'">Home</button>
+        <button class="nav-button" onclick="window.location.href='#about'">About</button>
+        <button class="nav-button" onclick="window.location.href='#contact'">Contact</button>
+        <div class="dropdown">
+            <button class="nav-button">Dropdown</button>
+            <div class="dropdown-content">
+                <a href="#option1">Option 1</a>
+                <a href="#option2">Option 2</a>
+                <a href="#option3">Option 3</a>
+            </div>
+        </div>
+        <button class="nav-button" onclick="window.location.href='#support'">Support</button>
+    </div>
+    """,
+    unsafe_allow_html=True,
+)
+
+# Page Content
+st.title("Welcome to the App")
+
+# Home Section
+st.markdown("<a id='home'></a>", unsafe_allow_html=True)
+st.header("Home")
+st.write("This is the home section of the app.")
+
+# About Section
+st.markdown("<a id='about'></a>", unsafe_allow_html=True)
+st.header("About")
+st.write("This is the about section of the app.")
+
+# Contact Section
+st.markdown("<a id='contact'></a>", unsafe_allow_html=True)
+st.header("Contact")
+st.write("This is the contact section of the app.")
+
+# Dropdown Section
+st.markdown("<a id='option1'></a>", unsafe_allow_html=True)
+st.header("Option 1")
+st.write("This is option 1 from the dropdown.")
+
+st.markdown("<a id='option2'></a>", unsafe_allow_html=True)
+st.header("Option 2")
+st.write("This is option 2 from the dropdown.")
+
+st.markdown("<a id='option3'></a>", unsafe_allow_html=True)
+st.header("Option 3")
+st.write("This is option 3 from the dropdown.")
+
+# Support Section
+st.markdown("<a id='support'></a>", unsafe_allow_html=True)
+st.header("Support")
+st.write("This is the support section of the app.")
 # Home Page
 if page == "🏠 Home":
     st.image("https://source.unsplash.com/featured/?stocks,market", use_column_width=True)

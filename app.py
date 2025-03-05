@@ -78,7 +78,7 @@ st.sidebar.info("""
 """)
 
 # Home Page (Updated)
-elif page == "🏠 Home":
+if page == "🏠 Home":
     st.title("📈 Stock Market Analyzer")
     st.markdown("---")
 

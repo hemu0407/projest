@@ -87,6 +87,8 @@ def hash_password(password):
     return hashlib.sha256(password.encode()).hexdigest()
 
 # Function to create a connection to MySQL
+import mysql.connector
+
 def create_connection():
     try:
         conn = mysql.connector.connect(
@@ -95,9 +97,10 @@ def create_connection():
             password="Mysql$0407", # Your MySQL password
             database="stock_market_app"   # Your database name
         )
+        print("Connected to MySQL successfully!")
         return conn
     except mysql.connector.Error as e:
-        st.error(f"Error connecting to MySQL: {e}")
+        print(f"Error connecting to MySQL: {e}")
         return None
 
 # Function to create users table

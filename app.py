@@ -21,7 +21,6 @@ st.markdown(
         margin: 0 auto;
         border: 1px solid #ddd;
         border-radius: 10px;
-        colour: #000;
         box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
     }
     .login-title {
@@ -199,29 +198,26 @@ st.sidebar.info("""
 Date: 2023-10-01  
 Version: 1.0.0
 """)
-
 # Home Page
 if st.session_state.page == "🏠 Home":
     # Add this at the top with other imports
     from datetime import datetime
 
-# NewsAPI Configuration (Get your free API key from https://newsapi.org/)
+    # NewsAPI Configuration (Get your free API key from https://newsapi.org/)
     NEWS_API_KEY = "e2d4e597c657407b9c1dee3a880cd670"  # Replace with your actual key
 
-def fetch_news():
-    """Fetch financial news from NewsAPI"""
-    url = f"https://newsapi.org/v2/everything?q=stocks&apiKey={NEWS_API_KEY}&sortBy=publishedAt&language=en"
-    try:
-        response = requests.get(url)
-        news_data = response.json()
-        return news_data.get('articles', [])[:6]  # Get first 6 articles
-    except Exception as e:
-        st.error(f"Error fetching news: {str(e)}")
-        return []
+    def fetch_news():
+        """Fetch financial news from NewsAPI"""
+        url = f"https://newsapi.org/v2/everything?q=stocks&apiKey={NEWS_API_KEY}&sortBy=publishedAt&language=en"
+        try:
+            response = requests.get(url)
+            news_data = response.json()
+            return news_data.get('articles', [])[:6]  # Get first 6 articles
+        except Exception as e:
+            st.error(f"Error fetching news: {str(e)}")
+            return []
 
-# Update the Home Page sectio
-if st.session_state.page == "🏠 Home":
-    # Main Header Section
+    # Update the Home Page section
     st.markdown(
         """
         <style>
@@ -235,7 +231,7 @@ if st.session_state.page == "🏠 Home":
         }
         
         .news-card {
-            background: white;
+            background: #ffffff;  /* White background */
             border-radius: 12px;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
             transition: transform 0.2s;
@@ -263,7 +259,7 @@ if st.session_state.page == "🏠 Home":
             display: flex;
             align-items: center;
             gap: 8px;
-            color: #666;
+            color: #666;  /* Medium gray for source text */
             margin-bottom: 0.5rem;
         }
         
@@ -271,6 +267,53 @@ if st.session_state.page == "🏠 Home":
             width: 20px;
             height: 20px;
             border-radius: 4px;
+        }
+
+        .news-content h4 {
+            color: #1e3c72;  /* Dark blue for article titles */
+            margin-bottom: 0.5rem;
+        }
+
+        .news-content p {
+            color: #444;  /* Dark gray for article descriptions */
+            line-height: 1.4;
+        }
+
+        .feature-card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            padding: 1.5rem;
+            text-align: center;
+            transition: transform 0.2s;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .feature-card h3 {
+            color: #1e3c72;  /* Dark blue for feature titles */
+            margin-bottom: 0.5rem;
+        }
+
+        .feature-card p {
+            color: #444;  /* Dark gray for feature descriptions */
+        }
+
+        .why-choose-us {
+            background: #f8f9fa;  /* Light gray background */
+            padding: 2rem;
+            border-radius: 12px;
+        }
+
+        .why-choose-us h4 {
+            color: #1e3c72;  /* Dark blue for section titles */
+            margin-bottom: 0.5rem;
+        }
+
+        .why-choose-us p {
+            color: #444;  /* Dark gray for section text */
         }
         </style>
         """,
@@ -292,7 +335,7 @@ if st.session_state.page == "🏠 Home":
         with col1:
             st.markdown(
                 """
-                <div style="text-align: center; padding: 1.5rem; background: white; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.1)">
+                <div class="feature-card">
                 <h3>📊 Live Market Data</h3>
                 <p>Real-time stock prices, charts, and technical indicators</p>
                 </div>
@@ -302,7 +345,7 @@ if st.session_state.page == "🏠 Home":
         with col2:
             st.markdown(
                 """
-                <div style="text-align: center; padding: 1.5rem; background: white; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.1)">
+                <div class="feature-card">
                 <h3>🚨 Smart Alerts</h3>
                 <p>Custom price alerts and AI-powered market insights</p>
                 </div>
@@ -312,7 +355,7 @@ if st.session_state.page == "🏠 Home":
         with col3:
             st.markdown(
                 """
-                <div style="text-align: center; padding: 1.5rem; background: white; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.1)">
+                <div class="feature-card">
                 <h3>📰 Market News</h3>
                 <p>Curated financial news from trusted sources</p>
                 </div>
@@ -345,7 +388,7 @@ if st.session_state.page == "🏠 Home":
                                 <span>{article['source']['name']} • {published_at}</span>
                             </div>
                             <h4>{article['title']}</h4>
-                            <p style="color: #444; line-height: 1.4">{article['description'] or ''}</p>
+                            <p>{article['description'] or ''}</p>
                         </div>
                     </div>
                     </a>
@@ -360,7 +403,7 @@ if st.session_state.page == "🏠 Home":
     with st.container():
         st.subheader("📈 Why Choose Market Pulse?")
         st.markdown("""
-        <div style="background: #f8f9fa; padding: 2rem; border-radius: 12px;">
+        <div class="why-choose-us">
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 2rem;">
                 <div>
                     <h4>💡 Intelligent Analytics</h4>
@@ -378,7 +421,6 @@ if st.session_state.page == "🏠 Home":
         </div>
         """, unsafe_allow_html=True)
     st.image("https://source.unsplash.com/featured/?stocks,market", use_column_width=True)
-
 # Stock Market Dashboard
 elif st.session_state.page == "📊 Stock Market Dashboard":
     st.title("📊 Stock Market Dashboard")

@@ -1,12 +1,28 @@
+# Import statements at the top of the script
 import streamlit as st
 import requests
 import pandas as pd
 import plotly.express as px
 import numpy as np
-from datetime import datetime, timedelta  # Correctly placed here
+from datetime import datetime, timedelta
 from sklearn.svm import SVR
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
+
+# NewsAPI Configuration (Get your free API key from https://newsapi.org/)
+NEWS_API_KEY = "YOUR_NEWS_API_KEY"  # Replace with your actual key
+
+# Define fetch_news() function
+def fetch_news():
+    """Fetch financial news from NewsAPI"""
+    url = f"https://newsapi.org/v2/everything?q=stocks&apiKey={NEWS_API_KEY}&sortBy=publishedAt&language=en"
+    try:
+        response = requests.get(url)
+        news_data = response.json()
+        return news_data.get('articles', [])[:6]  # Get first 6 articles
+    except Exception as e:
+        st.error(f"Error fetching news: {str(e)}")
+        return []
 
 # Set Page Configuration
 st.set_page_config(page_title="Stock Market App", layout="wide")
@@ -14,6 +30,8 @@ st.set_page_config(page_title="Stock Market App", layout="wide")
 # Initialize session state variables
 if "page" not in st.session_state:
     st.session_state.page = "🏠 Home"  # Set default page to Home
+
+# Rest of your code...
 
 # Custom CSS for Login Page
 st.markdown(

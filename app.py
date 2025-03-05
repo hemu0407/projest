@@ -1,14 +1,14 @@
+# Import statements at the top of the script
 import streamlit as st
 import requests
 import pandas as pd
 import plotly.express as px
 import numpy as np
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta  # Correctly placed here
 from sklearn.svm import SVR
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 
-# Set Page Configuration
 # Set Page Configuration
 st.set_page_config(page_title="Stock Market App", layout="wide")
 
@@ -36,8 +36,6 @@ st.markdown(
     """,
     unsafe_allow_html=True,
 )
-
-# Rest of your code...
 
 # User Database (Replace with a real database in production)
 USERS = {

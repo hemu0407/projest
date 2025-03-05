@@ -1,10 +1,3 @@
-Here’s the **full code** for your Stock Market App with **MySQL integration** for the **Sign Up and Login functionality**. The rest of the app remains **unchanged**.
-
----
-
-### Full Code
-
-```python
 import streamlit as st
 import requests
 import pandas as pd

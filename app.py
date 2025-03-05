@@ -39,30 +39,6 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-# Sidebar Navigation
-st.sidebar.title("📌 Navigation")
-st.sidebar.markdown("---")
-
-# Navigation Items
-pages = {
-    "🏠 Home": "🏠 Home",
-    "📊 Stock Market Dashboard": "dashboard",
-    "🚨 Price Alert": "alert",
-    "🔄 Stock Comparison": "comparison"
-}
-
-current_page = st.session_state.get("current_page", "dashboard")
-
-for page_name, page_id in pages.items():
-    is_active = current_page == page_id
-    class_name = "nav-item active" if is_active else "nav-item"
-    
-    st.sidebar.markdown(
-        f'<div class="{class_name}" onclick="window.streamlitSessionState.setItem(\'current_page\', \'{page_id}\'); window.location.reload()">{page_name}</div>',
-        unsafe_allow_html=True
-    )
-
-# Additional Sections (keep your existing information sections)...
 # API Key
 API_KEY = "B1N3W1H7PD3F8ZRG"
 

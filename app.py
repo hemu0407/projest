@@ -330,4 +330,3 @@ elif page == "🔄 Stock Comparison":
 
         else:
             st.warning("⚠ Failed to fetch comparison data")
-the finest without home and side ui

@@ -4,9 +4,106 @@ import pandas as pd
 import plotly.express as px
 import numpy as np
 from datetime import datetime, timedelta
+import mysql.connector
 
 # Set Page Configuration
 st.set_page_config(page_title="Stock Market App", layout="wide")
+
+# MySQL Database Configuration
+db_config = {
+    "host": "localhost",
+    "user": "root",
+    "password": "Mysql$0407",
+    "database": "stock_market_app"
+}
+
+# Function to connect to the database
+def connect_to_database():
+    return mysql.connector.connect(**db_config)
+
+# Function to create users table if it doesn't exist
+def create_users_table():
+    conn = connect_to_database()
+    cursor = conn.cursor()
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS users (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            username VARCHAR(255) NOT NULL UNIQUE,
+            password VARCHAR(255) NOT NULL
+        )
+    """)
+    conn.commit()
+    cursor.close()
+    conn.close()
+
+# Function to add a new user to the database
+def add_user(username, password):
+    conn = connect_to_database()
+    cursor = conn.cursor()
+    cursor.execute("INSERT INTO users (username, password) VALUES (%s, %s)", (username, password))
+    conn.commit()
+    cursor.close()
+    conn.close()
+
+# Function to check if a user exists in the database
+def check_user(username, password):
+    conn = connect_to_database()
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM users WHERE username = %s AND password = %s", (username, password))
+    user = cursor.fetchone()
+    cursor.close()
+    conn.close()
+    return user is not None
+
+# Initialize session state
+if "logged_in" not in st.session_state:
+    st.session_state.logged_in = False
+if "username" not in st.session_state:
+    st.session_state.username = ""
+if "alerts" not in st.session_state:
+    st.session_state.alerts = []
+
+# Create users table if it doesn't exist
+create_users_table()
+
+# Login and Signup Forms
+def login_signup_form():
+    st.sidebar.title("🔐 Login / Signup")
+    choice = st.sidebar.radio("Choose Action", ["Login", "Signup"])
+
+    if choice == "Login":
+        st.sidebar.subheader("Login")
+        username = st.sidebar.text_input("Username")
+        password = st.sidebar.text_input("Password", type="password")
+
+        if st.sidebar.button("Login"):
+            if check_user(username, password):
+                st.session_state.logged_in = True
+                st.session_state.username = username
+                st.sidebar.success("Logged in successfully!")
+            else:
+                st.sidebar.error("Invalid username or password")
+
+    elif choice == "Signup":
+        st.sidebar.subheader("Signup")
+        new_username = st.sidebar.text_input("Choose a Username")
+        new_password = st.sidebar.text_input("Choose a Password", type="password")
+        confirm_password = st.sidebar.text_input("Confirm Password", type="password")
+
+        if st.sidebar.button("Signup"):
+            if new_password == confirm_password:
+                try:
+                    add_user(new_username, new_password)
+                    st.sidebar.success("Account created successfully! Please login.")
+                except mysql.connector.IntegrityError:
+                    st.sidebar.error("Username already exists")
+            else:
+                st.sidebar.error("Passwords do not match")
+
+# Display login/signup form if not logged in
+if not st.session_state.logged_in:
+    login_signup_form()
+    st.stop()
 
 # API Key
 API_KEY = "B1N3W1H7PD3F8ZRG"
@@ -30,10 +127,6 @@ def get_stock_data(symbol):
     url = f"https://www.alphavantage.co/query?function=TIME_SERIES_INTRADAY&symbol={symbol}&interval=5min&apikey={API_KEY}&outputsize=full"
     response = requests.get(url)
     return response.json()
-
-# Initialize session state
-if "alerts" not in st.session_state:
-    st.session_state.alerts = []
 
 # Sidebar Navigation
 st.sidebar.title("📌 Navigation")

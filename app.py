@@ -220,6 +220,7 @@ def fetch_news():
         return []
 
 # Update the Home Page sectio
+if st.session_state.page == "🏠 Home":
     # Main Header Section
     st.markdown(
         """

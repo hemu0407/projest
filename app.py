@@ -4,6 +4,9 @@ import pandas as pd
 import plotly.express as px
 import numpy as np
 from datetime import datetime, timedelta
+from sklearn.svm import SVR
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
 
 # Set Page Configuration
 st.set_page_config(page_title="Stock Market App", layout="wide")
@@ -41,7 +44,7 @@ st.sidebar.markdown("---")  # Adds a horizontal line for separation
 
 # Sidebar Sections
 st.sidebar.markdown("### 📊 Dashboard")
-page = st.sidebar.radio("", ["🏠 Home", "📊 Stock Market Dashboard", "🚨 Price Alert", "🔄 Stock Comparison"])
+page = st.sidebar.radio("", ["🏠 Home", "📊 Stock Market Dashboard", "🚨 Price Alert", "🔄 Stock Comparison"], index=1)
 
 # Additional Information Section
 st.sidebar.markdown("---")
@@ -116,42 +119,55 @@ elif page == "📊 Stock Market Dashboard":
 
         # Investment Calculator
         num_stocks = st.number_input("🛒 Enter number of stocks to buy", min_value=1, step=1)
+        total_cost = num_stocks * current_price
+        st.info(f"💰 Total Investment: ${total_cost:.2f}")
 
         if st.button("📊 Fetch Profit/Loss and Future Prediction"):
-            total_cost = num_stocks * current_price
-            st.info(f"💰 Total Investment: ${total_cost:.2f}")
+            # Prepare data for SVM
+            df['Time'] = (df.index - df.index[0]).total_seconds() / 3600  # Convert time to hours
+            X = df[['Time']]
+            y = df['Close']
+            
+            # Train-test split (80:20)
+            X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+            
+            # Scale the data
+            scaler = StandardScaler()
+            X_train_scaled = scaler.fit_transform(X_train)
+            X_test_scaled = scaler.transform(X_test)
+            
+            # Train SVM model
+            svm_model = SVR(kernel='rbf')
+            svm_model.fit(X_train_scaled, y_train)
+            
+            # Predict future prices
+            future_hours = np.arange(df['Time'].max() + 1, df['Time'].max() + 24, 1).reshape(-1, 1)
+            future_hours_scaled = scaler.transform(future_hours)
+            predicted_prices = svm_model.predict(future_hours_scaled)
+            
+            # Create future dataframe
+            future_times = pd.date_range(start=df.index[-1], periods=len(future_hours), freq="H")
+            future_df = pd.DataFrame({"Time": future_times, "Predicted Price": predicted_prices})
+            
+            # Plot predictions
+            st.subheader("📈 Future Stock Price Prediction (SVM Model)")
+            fig_pred = px.line(future_df, x="Time", y="Predicted Price", 
+                             title="📈 Predicted Stock Prices (Next 24 Hours)", 
+                             template="plotly_dark")
+            st.plotly_chart(fig_pred)
+            
+            # Profit/Loss Calculation
+            future_price = predicted_prices[-1]
+            future_value = num_stocks * future_price
+            profit_loss = future_value - total_cost
+            profit_loss_percentage = (profit_loss / total_cost) * 100
 
-            # Future Trend Prediction
-            st.subheader("📈 Future Stock Price Prediction (Moving Averages)")
-            today = datetime.now().date()
-            df_today = df[df.index.date == today]
-
-            if df_today.empty:
-                st.warning("⚠ Market is closed. No predictions available for today.")
+            if profit_loss > 0:
+                st.success(f"📈 Profit: ${profit_loss:.2f} ({profit_loss_percentage:.2f}%)")
+                st.info(f"💡 Recommendation: Consider selling when price reaches ${future_price:.2f}")
             else:
-                window_size = 10
-                df_today["Moving Avg"] = df_today["Close"].rolling(window=window_size).mean()
-                future_prices = df_today["Moving Avg"].iloc[-window_size:].values
-                future_times = pd.date_range(start=df_today.index[-1], periods=window_size + 1, freq="5T")[1:]
-
-                future_df = pd.DataFrame({"Time": future_times, "Predicted Price": future_prices})
-                fig_pred = px.line(future_df, x="Time", y="Predicted Price", 
-                                 title="📈 Predicted Stock Prices (Next 10 Intervals)", 
-                                 template="plotly_dark")
-                st.plotly_chart(fig_pred)
-
-                # Profit/Loss Calculation
-                future_price = future_prices[-1]
-                future_value = num_stocks * future_price
-                profit_loss = future_value - total_cost
-                profit_loss_percentage = (profit_loss / total_cost) * 100
-
-                if profit_loss > 0:
-                    st.success(f"📈 Profit: ${profit_loss:.2f} ({profit_loss_percentage:.2f}%)")
-                    st.info(f"💡 Recommendation: Consider selling when price reaches ${future_price:.2f}")
-                else:
-                    st.error(f"📉 Loss: ${abs(profit_loss):.2f} ({abs(profit_loss_percentage):.2f}%)")
-                    st.warning("💡 Recommendation: Wait for better entry point")
+                st.error(f"📉 Loss: ${abs(profit_loss):.2f} ({abs(profit_loss_percentage):.2f}%)")
+                st.warning("💡 Recommendation: Do not invest at this time")
 
 # Price Alert Section
 elif page == "🚨 Price Alert":

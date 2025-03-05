@@ -9,7 +9,7 @@ from datetime import datetime, timedelta
 st.set_page_config(page_title="Stock Market App", layout="wide")
 
 # API Key
-API_KEY = "2FBFACISUP9PL6YT"
+API_KEY = "B1N3W1H7PD3F8ZRG"
 
 # Stock Symbols
 companies = {

@@ -107,7 +107,7 @@ st.markdown(
         border: 1px solid #ccc;
         text-align: left;
         font-size: 16px;
-        color: #333;
+        color: #000;
     }
     .sidebar .stButton>button:hover {
         background-color: #e2e6ea;

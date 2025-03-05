@@ -11,7 +11,69 @@ from sklearn.preprocessing import StandardScaler
 # Set Page Configuration
 st.set_page_config(page_title="Stock Market App", layout="wide")
 
-# Custom CSS for Sidebar Blocks
+# Custom CSS for Login Page
+st.markdown(
+    """
+    <style>
+    .login-container {
+        max-width: 400px;
+        padding: 2rem;
+        margin: 0 auto;
+        border: 1px solid #ddd;
+        border-radius: 10px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+    .login-title {
+        text-align: center;
+        margin-bottom: 2rem;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
+
+# User Database (Replace with real database in production)
+USERS = {
+    "user1": {"password": "pass1", "name": "John Doe"},
+    "user2": {"password": "pass2", "name": "Jane Smith"}
+}
+
+# Authentication Functions
+def authenticate(username, password):
+    if username in USERS and USERS[username]['password'] == password:
+        return True
+    return False
+
+def login_page():
+    st.markdown("<div class='login-container'>", unsafe_allow_html=True)
+    st.markdown("<h2 class='login-title'>🔒 Stock App Login</h2>", unsafe_allow_html=True)
+    
+    username = st.text_input("Username")
+    password = st.text_input("Password", type="password")
+    
+    if st.button("Login"):
+        if authenticate(username, password):
+            st.session_state.authenticated = True
+            st.session_state.current_user = USERS[username]['name']
+            st.experimental_rerun()
+        else:
+            st.error("Invalid username/password")
+    
+    st.markdown("</div>", unsafe_allow_html=True)
+    st.stop()
+
+# Check Authentication
+if "authenticated" not in st.session_state:
+    st.session_state.authenticated = False
+
+if not st.session_state.authenticated:
+    login_page()
+
+# =================================================================
+# REST OF YOUR ORIGINAL CODE STARTS HERE (Only for authenticated users)
+# =================================================================
+
+# Custom CSS for Sidebar Blocks (Original CSS remains same)
 st.markdown(
     """
     <style>
@@ -42,9 +104,22 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-# API Key
+# Add logout button to sidebar
+st.sidebar.markdown("---")
+if st.sidebar.button("🚪 Logout"):
+    st.session_state.authenticated = False
+    st.session_state.clear()
+    st.experimental_rerun()
+
+# Show welcome message
+st.sidebar.markdown(f"### 👋 Welcome, {st.session_state.current_user}!")
+
+# API Key and other original code continues...
 API_KEY = "B1N3W1H7PD3F8ZRG"
 
+# ... Rest of your original code continues unchanged ...
+# [Keep all your existing code here including companies dictionary, 
+# stock data functions, page navigation, and other features]
 # Stock Symbols
 companies = {
     "Apple (AAPL)": "AAPL",

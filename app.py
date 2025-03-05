@@ -12,32 +12,6 @@ from sklearn.preprocessing import StandardScaler
 st.set_page_config(page_title="Stock Market App", layout="wide")
 
 # Custom CSS for Sidebar Navigation
-st.markdown(
-    """
-    <style>
-    .nav-item {
-        padding: 12px 15px;
-        border-bottom: 1px solid #e0e0e0;
-        cursor: pointer;
-        transition: background-color 0.2s;
-        width: 100%;
-        text-align: left;
-        font-size: 15px;
-    }
-    .nav-item:last-child {
-        border-bottom: none;
-    }
-    .nav-item:hover {
-        background-color: #f5f5f5;
-    }
-    .nav-item.active {
-        background-color: #e3f2fd;
-        font-weight: 500;
-    }
-    </style>
-    """,
-    unsafe_allow_html=True,
-)
 
 # API Key
 API_KEY = "B1N3W1H7PD3F8ZRG"

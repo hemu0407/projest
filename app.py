@@ -420,7 +420,7 @@ if st.session_state.page == "🏠 Home":
             </div>
         </div>
         """, unsafe_allow_html=True)
-    st.image("https://source.unsplash.com/featured/?stocks,market", use_column_width=True)
+    
 # Stock Market Dashboard
 elif st.session_state.page == "📊 Stock Market Dashboard":
     st.title("📊 Stock Market Dashboard")

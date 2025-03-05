@@ -9,7 +9,12 @@ from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 
 # Set Page Configuration
+# Set Page Configuration
 st.set_page_config(page_title="Stock Market App", layout="wide")
+
+# Initialize session state variables
+if "page" not in st.session_state:
+    st.session_state.page = "🏠 Home"  # Set default page to Home
 
 # Custom CSS for Login Page
 st.markdown(
@@ -31,6 +36,8 @@ st.markdown(
     """,
     unsafe_allow_html=True,
 )
+
+# Rest of your code...
 
 # User Database (Replace with a real database in production)
 USERS = {

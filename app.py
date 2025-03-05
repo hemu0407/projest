@@ -34,8 +34,8 @@ st.markdown(
 
 # User Database (Replace with a real database in production)
 USERS = {
-    "user1": {"password": "pass1", "name": "John Doe"},
-    "user2": {"password": "pass2", "name": "Jane Smith"}
+    "user1": {"password": "pass1", "name": "User1"},
+    "user2": {"password": "pass2", "name": "User2"}
 }
 
 # Authentication Functions
@@ -187,16 +187,16 @@ st.sidebar.markdown("---")
 st.sidebar.markdown("### 📧 Contact")
 st.sidebar.info("""
 For any queries or feedback, please contact us at:
-- Email: support@stockmarketapp.com
-- Phone: +1 (123) 456-7890
+- Email: stockpulse@gmail.com
+- Phone: +91 7013727704
 """)
 
 # Footer Section
 st.sidebar.markdown("---")
 st.sidebar.markdown("### 📅 Last Updated")
 st.sidebar.info("""
-Date: 2023-10-01  
-Version: 1.0.0
+Date: 2025-03-03  
+Version: 4.1.9
 """)
 # Home Page
 if st.session_state.page == "🏠 Home":

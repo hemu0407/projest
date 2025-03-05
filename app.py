@@ -1,10 +1,7 @@
-Here’s the **complete code** with your provided **News API key** and **MySQL database credentials** integrated. The Home Page section has been updated with **Sign In/Sign Up functionality**, **news articles**, and **MySQL database integration**, while all other sections remain **unchanged**.
-
-```python
 import streamlit as st
 import requests
 import pandas as pd
-import plotly.express as px
+import plotly.express as p
 import numpy as np
 from datetime import datetime, timedelta
 import mysql.connector

@@ -58,7 +58,7 @@ def login_page():
             st.session_state.authenticated = True
             st.session_state.current_user = USERS[username]['name']
             st.success("Login successful! Redirecting...")
-            st.experimental_rerun()
+            st.rerun()  # Use st.rerun() instead of st.experimental_rerun()
         else:
             st.error("Invalid username/password")
     
@@ -73,6 +73,11 @@ if "authenticated" not in st.session_state:
 if not st.session_state.authenticated:
     login_page()
 
+# =================================================================
+# REST OF YOUR ORIGINAL CODE STARTS HERE (Only for authenticated users)
+# =================================================================
+
+# [Rest of your code remains unchanged...]
 # =================================================================
 # REST OF YOUR ORIGINAL CODE STARTS HERE (Only for authenticated users)
 # =================================================================

@@ -77,6 +77,10 @@ Version: 1.0.0
 """)
 
 # Home Page Section (Updated)
+# Home Page
+if page == "🏠 Home":
+    st.image("https://source.unsplash.com/featured/?stocks,market", use_column_width=True)
+
 elif page == "🏠 Home":
     st.title("📈 Stock Market Analyzer")
     st.markdown("---")

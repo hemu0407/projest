@@ -58,7 +58,6 @@ def login_page():
             st.session_state.authenticated = True
             st.session_state.current_user = USERS[username]['name']
             st.success("Login successful! Redirecting...")
-            # No need to use st.rerun() or st.experimental_rerun()
         else:
             st.error("Invalid username/password")
     
@@ -77,12 +76,17 @@ if not st.session_state.authenticated:
 # REST OF YOUR ORIGINAL CODE STARTS HERE (Only for authenticated users)
 # =================================================================
 
-# [Rest of your code remains unchanged...]
-# =================================================================
-# REST OF YOUR ORIGINAL CODE STARTS HERE (Only for authenticated users)
-# =================================================================
+# Add logout button to sidebar
+st.sidebar.markdown("---")
+if st.sidebar.button("🚪 Logout"):
+    st.session_state.authenticated = False
+    st.session_state.clear()  # Clear all session state variables
+    st.success("Logged out successfully! Redirecting to login page...")
 
-# Custom CSS for Sidebar Blocks (Original CSS remains same)
+# Show welcome message
+st.sidebar.markdown(f"### 👋 Welcome, {st.session_state.current_user}!")
+
+# [Rest of your code remains unchanged...]
 st.markdown(
     """
     <style>
@@ -112,16 +116,6 @@ st.markdown(
     """,
     unsafe_allow_html=True,
 )
-
-# Add logout button to sidebar
-st.sidebar.markdown("---")
-if st.sidebar.button("🚪 Logout"):
-    st.session_state.authenticated = False
-    st.session_state.clear()
-    st.experimental_rerun()
-
-# Show welcome message
-st.sidebar.markdown(f"### 👋 Welcome, {st.session_state.current_user}!")
 
 # API Key and other original code continues...
 API_KEY = "B1N3W1H7PD3F8ZRG"

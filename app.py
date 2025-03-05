@@ -426,7 +426,7 @@ elif st.session_state.page == "🔄 Stock Comparison":
 
             if momentum1 > momentum2:
                 st.success(f"{stock1} shows stronger upward momentum")
-                                st.write("💡 *Consider:* Potential buying opportunity in", stock1)
+                st.write("💡 *Consider:* Potential buying opportunity in", stock1)
             else:
                 st.warning(f"{stock2} demonstrates better recent performance")
                 st.write("💡 *Consider:* Investigate", stock2, "for potential investments")

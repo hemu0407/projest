@@ -204,6 +204,28 @@ Date: 2023-10-01
 Version: 1.0.0
 """)
 
+# NewsAPI Configuration (Get your free API key from https://newsapi.org/)
+NEWS_API_KEY = "e2d4e597c657407b9c1dee3a880cd670"  # Replace with your actual key
+
+# Define fetch_news() function
+def fetch_news():
+    """Fetch financial news from NewsAPI"""
+    url = f"https://newsapi.org/v2/everything?q=stocks&apiKey={NEWS_API_KEY}&sortBy=publishedAt&language=en"
+    try:
+        response = requests.get(url)
+        news_data = response.json()
+        return news_data.get('articles', [])[:6]  # Get first 6 articles
+    except Exception as e:
+        st.error(f"Error fetching news: {str(e)}")
+        return []
+
+# Set Page Configuration
+st.set_page_config(page_title="Stock Market App", layout="wide")
+
+# Initialize session state variables
+if "page" not in st.session_state:
+    st.session_state.page = "🏠 Home"  # Set default page to Home
+
 # Home Page
 if st.session_state.page == "🏠 Home":
     # Add the updated home page code here
@@ -348,54 +370,6 @@ if st.session_state.page == "🏠 Home":
     
     news_articles = fetch_news()
     
-    if news_articles:
-        cols = st.columns(2)
-        for idx, article in enumerate(news_articles):
-            with cols[idx % 2]:
-                published_at = datetime.strptime(article['publishedAt'], '%Y-%m-%dT%H:%M:%SZ').strftime('%b %d, %Y %H:%M')
-              
-    else:
-        st.warning("Unable to fetch news at this moment. Please try again later.")
-
-    # Additional Sections
-    st.markdown("---")
-    with st.container():
-        st.subheader("📈 Why Choose Market Pulse?")
-        st.markdown("""
-        <div class="why-choose-us">
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 2rem;">
-                <div>
-                    <h4>💡 Intelligent Analytics</h4>
-                    <p>AI-powered market predictions and trend analysis powered by machine learning models</p>
-                </div>
-                <div>
-                    <h4>🔔 Real-Time Alerts</h4>
-                    <p>Customizable price alerts and breaking news notifications</p>
-                </div>
-                <div>
-                    <h4>🌐 Global Coverage</h4>
-                    <p>Track markets across multiple exchanges worldwide</p>
-                </div>
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
-
-# NewsAPI Configuration (Get your free API key from https://newsapi.org/)
-    NEWS_API_KEY = "e2d4e597c657407b9c1dee3a880cd670"  # Replace with your actual key
-
-def fetch_news():
-    """Fetch financial news from NewsAPI"""
-    url = f"https://newsapi.org/v2/everything?q=stocks&apiKey={NEWS_API_KEY}&sortBy=publishedAt&language=en"
-    try:
-        response = requests.get(url)
-        news_data = response.json()
-        return news_data.get('articles', [])[:6]  # Get first 6 articles
-    except Exception as e:
-        st.error(f"Error fetching news: {str(e)}")
-        return []
-
-
-
 # Stock Market Dashboard
 if st.session_state.page == "📊 Stock Market Dashboard":
     st.title("📊 Stock Market Dashboard")

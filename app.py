@@ -36,47 +36,8 @@ def get_stock_data(symbol):
 # Initialize session state
 if "alerts" not in st.session_state:
     st.session_state.alerts = []
-
-# Sidebar Navigation
-st.sidebar.title("📌 Navigation")
-st.sidebar.markdown("---")  # Adds a horizontal line for separation
-
-# Sidebar Sections
-st.sidebar.markdown("### 📊 Dashboard")
-page = st.sidebar.radio("", ["🏠 Home", "📊 Stock Market Dashboard", "🚨 Price Alert", "🔄 Stock Comparison"])
-
-# Additional Information Section
-st.sidebar.markdown("---")
-st.sidebar.markdown("### ℹ Information")
-st.sidebar.info("""
-This app provides real-time stock market data, price alerts, and advanced stock comparison tools. 
-Use the navigation above to explore different features.
-""")
-
-# API Information Section
-st.sidebar.markdown("---")
-st.sidebar.markdown("### 🔑 API Information")
-st.sidebar.info("""
-Data is fetched using the Alpha Vantage API. 
-For more details, visit [Alpha Vantage](https://www.alphavantage.co/).
-""")
-
-# Contact Information Section
-st.sidebar.markdown("---")
-st.sidebar.markdown("### 📧 Contact")
-st.sidebar.info("""
-For any queries or feedback, please contact us at:
-- *Email:* support@stockmarketapp.com
-- *Phone:* +1 (123) 456-7890
-""")
-
-# Footer Section
-st.sidebar.markdown("---")
-st.sidebar.markdown("### 📅 Last Updated")
-st.sidebar.info("""
-*Date:* 2023-10-01  
-*Version:* 1.0.0
-""")
+if "user" not in st.session_state:
+    st.session_state.user = None
 
 # --------------------------
 # MySQL Database Functions
@@ -87,8 +48,6 @@ def hash_password(password):
     return hashlib.sha256(password.encode()).hexdigest()
 
 # Function to create a connection to MySQL
-import mysql.connector
-
 def create_connection():
     try:
         conn = mysql.connector.connect(
@@ -97,10 +56,9 @@ def create_connection():
             password="Mysql$0407", # Your MySQL password
             database="stock_market_app"   # Your database name
         )
-        print("Connected to MySQL successfully!")
         return conn
     except mysql.connector.Error as e:
-        print(f"Error connecting to MySQL: {e}")
+        st.error(f"Error connecting to MySQL: {e}")
         return None
 
 # Function to create users table
@@ -155,18 +113,17 @@ def login_user(username, password):
 create_users_table()
 
 # --------------------------
-# Page Routing
+# Streamlit UI
 # --------------------------
 
-# Home Page (Updated Sign Up Section)
-if page == "🏠 Home":
+# Home Page
+def home_page():
     st.title("📈 Stock Market Analyzer")
     st.markdown("---")
 
-    # Home Page Layout
-    col1, col2 = st.columns([1, 2])
-
-    with col1:
+    # Centered Sign In / Sign Up Section
+    col1, col2, col3 = st.columns([1, 2, 1])
+    with col2:
         st.subheader("🔐 Sign In / Sign Up")
         tab1, tab2 = st.tabs(["Sign In", "Sign Up"])
 
@@ -180,7 +137,7 @@ if page == "🏠 Home":
                         st.session_state.user = username
                         st.success(f"Welcome back, {username}!")
                     else:
-                        st.error("Invalid username or password.")
+                        st.error("Invalid username or password. Please sign up.")
                 else:
                     st.warning("Please enter both username and password.")
 
@@ -198,62 +155,36 @@ if page == "🏠 Home":
                 else:
                     st.warning("Please fill all fields.")
 
-    with col2:
-        st.subheader("📰 Latest Stock Market News")
-        # Fetch News Articles (NewsAPI)
-        def fetch_news():
-            try:
-                news_api_key = "e2d4e597c657407b9c1dee3a880cd670"  # Your News API key
-                url = f"https://newsapi.org/v2/everything?q=stock+market&apiKey={news_api_key}"
-                response = requests.get(url)
-                if response.status_code == 200:
-                    return response.json()["articles"]
-                else:
-                    st.error("Failed to fetch news. Please try again later.")
-                    return []
-            except Exception as e:
-                st.error(f"Error fetching news: {e}")
+    # News Articles Section
+    st.subheader("📰 Latest Stock Market News")
+    def fetch_news():
+        try:
+            news_api_key = "e2d4e597c657407b9c1dee3a880cd670"  # Your News API key
+            url = f"https://newsapi.org/v2/everything?q=stock+market&apiKey={news_api_key}"
+            response = requests.get(url)
+            if response.status_code == 200:
+                return response.json()["articles"]
+            else:
+                st.error("Failed to fetch news. Please try again later.")
                 return []
+        except Exception as e:
+            st.error(f"Error fetching news: {e}")
+            return []
 
-        news_articles = fetch_news()
-        if news_articles:
-            for article in news_articles[:5]:  # Display top 5 articles
-                st.markdown(f"### {article['title']}")
-                st.write(f"**Source:** {article['source']['name']}")
-                st.write(f"**Published At:** {article['publishedAt']}")
-                st.write(article['description'])
-                st.markdown(f"[Read More]({article['url']})")
-                st.markdown("---")
-        else:
-            st.info("No news articles available at the moment.")
+    news_articles = fetch_news()
+    if news_articles:
+        for article in news_articles[:5]:  # Display top 5 articles
+            st.markdown(f"### {article['title']}")
+            st.write(f"**Source:** {article['source']['name']}")
+            st.write(f"**Published At:** {article['publishedAt']}")
+            st.write(article['description'])
+            st.markdown(f"[Read More]({article['url']})")
+            st.markdown("---")
+    else:
+        st.info("No news articles available at the moment.")
 
-    # Additional Features
-    st.subheader("🌟 Why Choose Us?")
-    st.markdown("""
-    - **Real-Time Data:** Get up-to-date stock market data.
-    - **Advanced Analysis:** Perform in-depth stock comparisons.
-    - **Price Alerts:** Never miss important price movements.
-    - **Personalized Experience:** Sign up to save your preferences and alerts.
-    """)
-
-    st.subheader("📊 Quick Stats")
-    col1, col2, col3 = st.columns(3)
-    with col1:
-        st.metric("Total Users", "1,234")  # Replace with dynamic data from DB
-    with col2:
-        st.metric("Active Alerts", "56")  # Replace with dynamic data from DB
-    with col3:
-        st.metric("Stocks Tracked", "500+")
-
-    st.subheader("📞 Contact Us")
-    st.markdown("""
-    Have questions or need support? Reach out to us:
-    - **Email:** support@stockmarketapp.com
-    - **Phone:** +1 (123) 456-7890
-    """)
-
-# Stock Market Dashboard (Unchanged)
-elif page == "📊 Stock Market Dashboard":
+# Stock Market Dashboard
+def stock_market_dashboard():
     st.title("📊 Stock Market Dashboard")
     
     selected_company = st.selectbox("📌 Select a Company", list(companies.keys()))
@@ -325,8 +256,8 @@ elif page == "📊 Stock Market Dashboard":
                     st.error(f"📉 Loss: ${abs(profit_loss):.2f} ({abs(profit_loss_percentage):.2f}%)")
                     st.warning("💡 Recommendation: Wait for better entry point")
 
-# Price Alert Section (Unchanged)
-elif page == "🚨 Price Alert":
+# Price Alert Section
+def price_alert():
     st.title("🚨 Price Alert")
 
     if "alerts" not in st.session_state:
@@ -377,8 +308,8 @@ elif page == "🚨 Price Alert":
             else:
                 st.warning(f"⚠ Couldn't fetch data for {alert['company']}")
 
-# Stock Comparison Section (Unchanged)
-elif page == "🔄 Stock Comparison":
+# Stock Comparison Section
+def stock_comparison():
     st.title("🔄 Advanced Stock Comparison")
 
     company_list = list(companies.keys())
@@ -440,7 +371,7 @@ elif page == "🔄 Stock Comparison":
             })
             fig_vol = px.bar(vol_df, x="Stock", y="Volatility", 
                             color="Stock", template="plotly_dark",
-                            title="Price Volatility (Standard Deviation of Daily Returns)")  # Fixed line
+                            title="Price Volatility (Standard Deviation of Daily Returns)")
             st.plotly_chart(fig_vol)
 
             if vol1 > vol2:
@@ -486,3 +417,28 @@ elif page == "🔄 Stock Comparison":
 
         else:
             st.warning("⚠ Failed to fetch comparison data")
+
+# --------------------------
+# Main App Logic
+# --------------------------
+
+# Sidebar Navigation
+st.sidebar.title("📌 Navigation")
+st.sidebar.markdown("---")  # Adds a horizontal line for separation
+
+# Sidebar Sections
+st.sidebar.markdown("### 📊 Dashboard")
+page = st.sidebar.radio("", ["🏠 Home", "📊 Stock Market Dashboard", "🚨 Price Alert", "🔄 Stock Comparison"])
+
+# Check if user is logged in
+if st.session_state.user:
+    if page == "🏠 Home":
+        home_page()
+    elif page == "📊 Stock Market Dashboard":
+        stock_market_dashboard()
+    elif page == "🚨 Price Alert":
+        price_alert()
+    elif page == "🔄 Stock Comparison":
+        stock_comparison()
+else:
+    home_page()

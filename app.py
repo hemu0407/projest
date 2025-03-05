@@ -1,20 +1,15 @@
-# Import statements at the top of the script
 import streamlit as st
 import requests
 import pandas as pd
 import plotly.express as px
 import numpy as np
-from datetime import datetime, timedelta  # Correctly placed here
+from datetime import datetime, timedelta
 from sklearn.svm import SVR
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 
 # Set Page Configuration
 st.set_page_config(page_title="Stock Market App", layout="wide")
-
-# Initialize session state variables
-if "page" not in st.session_state:
-    st.session_state.page = "🏠 Home"  # Set default page to Home
 
 # Custom CSS for Login Page
 st.markdown(
@@ -204,226 +199,12 @@ Date: 2023-10-01
 Version: 1.0.0
 """)
 
-# NewsAPI Configuration (Get your free API key from https://newsapi.org/)
-NEWS_API_KEY = "e2d4e597c657407b9c1dee3a880cd670"  # Replace with your actual key
-
-# Define fetch_news() function
-def fetch_news():
-    """Fetch financial news from NewsAPI"""
-    url = f"https://newsapi.org/v2/everything?q=stocks&apiKey={NEWS_API_KEY}&sortBy=publishedAt&language=en"
-    try:
-        response = requests.get(url)
-        news_data = response.json()
-        return news_data.get('articles', [])[:6]  # Get first 6 articles
-    except Exception as e:
-        st.error(f"Error fetching news: {str(e)}")
-        return []
-
-# Set Page Configuration
-st.set_page_config(page_title="Stock Market App", layout="wide")
-
-# Initialize session state variables
-if "page" not in st.session_state:
-    st.session_state.page = "🏠 Home"  # Set default page to Home
-
 # Home Page
 if st.session_state.page == "🏠 Home":
-    # Add the updated home page code here
-    st.markdown(
-        """
-        <style>
-        .main-header {
-            text-align: center;
-            padding: 4rem 1rem;
-            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
-            color: white;
-            border-radius: 15px;
-            margin-bottom: 2rem;
-        }
-        
-        .news-card {
-            background: white;
-            border-radius: 12px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            transition: transform 0.2s;
-            margin-bottom: 1.5rem;
-            overflow: hidden;
-        }
-        
-        .news-card:hover {
-            transform: translateY(-5px);
-        }
-        
-        .news-image {
-            width: 100%;
-            height: 200px;
-            object-fit: cover;
-            border-top-left-radius: 12px;
-            border-top-right-radius: 12px;
-        }
-        
-        .news-content {
-            padding: 1.5rem;
-        }
-        
-        .news-source {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            color: #666;
-            margin-bottom: 0.5rem;
-        }
-        
-        .source-logo {
-            width: 20px;
-            height: 20px;
-            border-radius: 4px;
-        }
-
-        .feature-card {
-            background: white;
-            border-radius: 12px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            padding: 1.5rem;
-            text-align: center;
-            transition: transform 0.2s;
-        }
-
-        .feature-card:hover {
-            transform: translateY(-5px);
-        }
-
-        .feature-card h3 {
-            color: #1e3c72;
-            margin-bottom: 0.5rem;
-        }
-
-        .feature-card p {
-            color: #444;
-        }
-
-        .why-choose-us {
-            background: #f8f9fa;
-            padding: 2rem;
-            border-radius: 12px;
-        }
-
-        .why-choose-us h4 {
-            color: #1e3c72;
-            margin-bottom: 0.5rem;
-        }
-
-        .why-choose-us p {
-            color: #444;
-        }
-        </style>
-        """,
-        unsafe_allow_html=True
-    )
-
-    # Main Header
-    st.markdown(
-        '<div class="main-header">'
-        '<h1 style="font-size: 3.5rem; margin-bottom: 1rem;">📈 Market Pulse</h1>'
-        '<p style="font-size: 1.2rem; opacity: 0.9;">Your Gateway to Real-Time Financial Intelligence</p>'
-        '</div>',
-        unsafe_allow_html=True
-    )
-
-    # App Features Grid
-    with st.container():
-        col1, col2, col3 = st.columns(3)
-        with col1:
-            st.markdown(
-                """
-                <div class="feature-card">
-                <h3>📊 Live Market Data</h3>
-                <p>Real-time stock prices, charts, and technical indicators</p>
-                </div>
-                """,
-                unsafe_allow_html=True
-            )
-        with col2:
-            st.markdown(
-                """
-                <div class="feature-card">
-                <h3>🚨 Smart Alerts</h3>
-                <p>Custom price alerts and AI-powered market insights</p>
-                </div>
-                """,
-                unsafe_allow_html=True
-            )
-        with col3:
-            st.markdown(
-                """
-                <div class="feature-card">
-                <h3>📰 Market News</h3>
-                <p>Curated financial news from trusted sources</p>
-                </div>
-                """,
-                unsafe_allow_html=True
-            )
-
-    # Real-Time News Section
-    st.markdown("---")
-    st.subheader("📰 Latest Market News")
-    
-    news_articles = fetch_news()
-    if news_articles:
-        cols = st.columns(2)
-        for idx, article in enumerate(news_articles):
-            with cols[idx % 2]:
-                published_at = datetime.strptime(article['publishedAt'], '%Y-%m-%dT%H:%M:%SZ').strftime('%b %d, %Y %H:%M')
-                
-                st.markdown(
-                    f"""
-                    <a href="{article['url']}" target="_blank" style="text-decoration: none; color: inherit;">
-                        <div class="news-card">
-                            <img src="{article['urlToImage'] or 'https://source.unsplash.com/featured/?finance,news'}" class="news-image">
-                            <div class="news-content">
-                                <div class="news-source">
-                                    <img src="https://logo.clearbit.com/{article['source']['name'].lower().replace(' ', '')}.com" 
-                                         class="source-logo" 
-                                         onerror="this.style.display='none'">
-                                    <span>{article['source']['name']} • {published_at}</span>
-                                </div>
-                                <h4>{article['title']}</h4>
-                                <p style="color: #444; line-height: 1.4">{article['description'] or ''}</p>
-                            </div>
-                        </div>
-                    </a>
-                    """,
-                    unsafe_allow_html=True
-                )
-    else:
-        st.warning("Unable to fetch news at this moment. Please try again later.")
-
-    # Additional Sections
-    st.markdown("---")
-    with st.container():
-        st.subheader("📈 Why Choose Market Pulse?")
-        st.markdown("""
-        <div class="why-choose-us">
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 2rem;">
-                <div>
-                    <h4>💡 Intelligent Analytics</h4>
-                    <p>AI-powered market predictions and trend analysis powered by machine learning models</p>
-                </div>
-                <div>
-                    <h4>🔔 Real-Time Alerts</h4>
-                    <p>Customizable price alerts and breaking news notifications</p>
-                </div>
-                <div>
-                    <h4>🌐 Global Coverage</h4>
-                    <p>Track markets across multiple exchanges worldwide</p>
-                </div>
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
-
+    st.image("https://source.unsplash.com/featured/?stocks,market", use_column_width=True)
 
 # Stock Market Dashboard
-if st.session_state.page == "📊 Stock Market Dashboard":
+elif st.session_state.page == "📊 Stock Market Dashboard":
     st.title("📊 Stock Market Dashboard")
     
     selected_company = st.selectbox("📌 Select a Company", list(companies.keys()))

@@ -1,3 +1,10 @@
+Here’s the **full code** for your Stock Market App with **MySQL integration** for the **Sign Up and Login functionality**. The rest of the app remains **unchanged**.
+
+---
+
+### Full Code
+
+```python
 import streamlit as st
 import requests
 import pandas as pd
@@ -5,6 +12,7 @@ import plotly.express as px
 import numpy as np
 from datetime import datetime, timedelta
 import mysql.connector
+import hashlib
 
 # Set Page Configuration
 st.set_page_config(page_title="Stock Market App", layout="wide")
@@ -78,76 +86,86 @@ st.sidebar.info("""
 """)
 
 # --------------------------
+# MySQL Database Functions
+# --------------------------
+
+# Function to hash passwords
+def hash_password(password):
+    return hashlib.sha256(password.encode()).hexdigest()
+
+# Function to create a connection to MySQL
+def create_connection():
+    try:
+        conn = mysql.connector.connect(
+            host="127.0.0.1",   # Use "127.0.0.1" instead of "localhost"
+            user="root",        # Your MySQL username
+            password="Mysql$0407", # Your MySQL password
+            database="stock_market_app"   # Your database name
+        )
+        return conn
+    except mysql.connector.Error as e:
+        st.error(f"Error connecting to MySQL: {e}")
+        return None
+
+# Function to create users table
+def create_users_table():
+    conn = create_connection()
+    if conn:
+        cursor = conn.cursor()
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS users (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                username VARCHAR(50) UNIQUE NOT NULL,
+                password VARCHAR(100) NOT NULL,
+                email VARCHAR(100) UNIQUE NOT NULL
+            )
+        """)
+        conn.commit()
+        cursor.close()
+        conn.close()
+
+# Function to register user
+def register_user(username, password, email):
+    conn = create_connection()
+    if conn:
+        cursor = conn.cursor()
+        try:
+            cursor.execute("""
+                INSERT INTO users (username, password, email)
+                VALUES (%s, %s, %s)
+            """, (username, hash_password(password), email))
+            conn.commit()
+            return True
+        except mysql.connector.IntegrityError:
+            return False
+        finally:
+            cursor.close()
+            conn.close()
+
+# Function to verify login
+def login_user(username, password):
+    conn = create_connection()
+    if conn:
+        cursor = conn.cursor()
+        cursor.execute("SELECT password FROM users WHERE username = %s", (username,))
+        user = cursor.fetchone()
+        cursor.close()
+        conn.close()
+        if user and user[0] == hash_password(password):
+            return True
+    return False
+
+# Create users table on startup
+create_users_table()
+
+# --------------------------
 # Page Routing
 # --------------------------
+
+# Home Page (Updated Sign Up Section)
 if page == "🏠 Home":
     st.title("📈 Stock Market Analyzer")
     st.markdown("---")
-
-    # Database Connection (MySQL)
-    def create_connection():
-        try:
-            conn = mysql.connector.connect(
-                host="127.0.0.1",
-                user="root",
-                password="Mysql$0407",
-                database="stock_market_app"
-            )
-            return conn
-        except mysql.connector.Error as e:
-            st.error(f"Error connecting to MySQL: {e}")
-            return None
-
-    # Create Users Table if not exists
-    def create_users_table():
-        conn = create_connection()
-        if conn:
-            cursor = conn.cursor()
-            cursor.execute("""
-                CREATE TABLE IF NOT EXISTS users (
-                    id INT AUTO_INCREMENT PRIMARY KEY,
-                    username VARCHAR(50) UNIQUE NOT NULL,
-                    password VARCHAR(100) NOT NULL,
-                    email VARCHAR(100) UNIQUE NOT NULL
-                )
-            """)
-            conn.commit()
-            cursor.close()
-            conn.close()
-
-    # Initialize Users Table
-    create_users_table()
-
-    # Sign Up Function
-    def sign_up(username, password, email):
-        conn = create_connection()
-        if conn:
-            cursor = conn.cursor()
-            try:
-                cursor.execute("""
-                    INSERT INTO users (username, password, email)
-                    VALUES (%s, %s, %s)
-                """, (username, password, email))
-                conn.commit()
-                st.success("🎉 Sign Up Successful! Please log in.")
-            except mysql.connector.Error as e:
-                st.error(f"Error: {e}")
-            finally:
-                cursor.close()
-                conn.close()
-
-    # Sign In Function
-    def sign_in(username, password):
-        conn = create_connection()
-        if conn:
-            cursor = conn.cursor()
-            cursor.execute("""
-                SELECT * FROM users WHERE username = %s AND password = %s
-            """, (username, password))
-            user = cursor.fetchone()
-            cursor.close()
-            conn.close()
-            return user
 
     # Home Page Layout
     col1, col2 = st.columns([1, 2])
@@ -162,10 +180,9 @@ if page == "🏠 Home":
             password = st.text_input("Password", type="password", key="signin_password")
             if st.button("Sign In"):
                 if username and password:
-                    user = sign_in(username, password)
-                    if user:
-                        st.session_state.user = user
-                        st.success(f"Welcome back, {user[1]}!")
+                    if login_user(username, password):
+                        st.session_state.user = username
+                        st.success(f"Welcome back, {username}!")
                     else:
                         st.error("Invalid username or password.")
                 else:
@@ -178,7 +195,10 @@ if page == "🏠 Home":
             email = st.text_input("Email", key="signup_email")
             if st.button("Sign Up"):
                 if new_username and new_password and email:
-                    sign_up(new_username, new_password, email)
+                    if register_user(new_username, new_password, email):
+                        st.success("🎉 Sign Up Successful! Please log in.")
+                    else:
+                        st.error("Username or email already exists!")
                 else:
                     st.warning("Please fill all fields.")
 
@@ -424,49 +444,4 @@ elif page == "🔄 Stock Comparison":
             })
             fig_vol = px.bar(vol_df, x="Stock", y="Volatility", 
                             color="Stock", template="plotly_dark",
-                            title="Price Volatility (Standard Deviation of Daily Returns)")
-            st.plotly_chart(fig_vol)
-
-            if vol1 > vol2:
-                st.warning(f"{stock1} is {vol1/vol2:.1f}x more volatile than {stock2}")
-                st.write("💡 **Consider:** Higher risk/reward potential in", stock1)
-            else:
-                st.info(f"{stock2} is {vol2/vol1:.1f}x more volatile than {stock1}")
-                st.write("💡 **Consider:**", stock2, "might offer better short-term trading opportunities")
-
-            # Momentum Analysis with Trend Insights
-            st.subheader("🚀 Momentum Analysis")
-            momentum1 = (comparison_df[stock1].iloc[-1] / comparison_df[stock1].iloc[0] - 1) * 100
-            momentum2 = (comparison_df[stock2].iloc[-1] / comparison_df[stock2].iloc[0] - 1) * 100
-            mom_df = pd.DataFrame({
-                "Stock": [stock1, stock2],
-                "Momentum": [momentum1, momentum2]
-            })
-            fig_momentum = px.bar(mom_df, x="Stock", y="Momentum", 
-                                 color="Stock", template="plotly_dark",
-                                 title="Percentage Change Over Period")
-            st.plotly_chart(fig_momentum)
-
-            if momentum1 > momentum2:
-                st.success(f"{stock1} shows stronger upward momentum")
-                st.write("💡 **Consider:** Potential buying opportunity in", stock1)
-            else:
-                st.warning(f"{stock2} demonstrates better recent performance")
-                st.write("💡 **Consider:** Investigate", stock2, "for potential investments")
-
-            # Final Recommendations
-            st.subheader("💡 Investment Recommendations")
-            if correlation > 0.7 and abs(momentum1 - momentum2) > 5:
-                st.success("**Pairs Trading Opportunity**")
-                st.write("- Buy the outperforming stock")
-                st.write("- Short the underperforming stock")
-            elif vol1 > 5 and vol2 > 5:
-                st.warning("**High Volatility Alert**")
-                st.write("- Consider options strategies")
-                st.write("- Implement stop-loss orders")
-            else:
-                st.info("**Diversification Opportunity**")
-                st.write("- Consider balanced portfolio allocation")
-
-        else:
-            st.warning("⚠ Failed to fetch comparison data")
+                            title="Price Volatility (Standard Deviation

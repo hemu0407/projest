@@ -190,7 +190,7 @@ elif page == "🏠 Home":
         # Fetch News Articles (Example API)
         def fetch_news():
             try:
-                news_api_key = "YOUR_NEWS_API_KEY"  # Replace with your News API key
+                news_api_key = "e2d4e597c657407b9c1dee3a880cd670"  # Replace with your News API key
                 url = f"https://newsapi.org/v2/everything?q=stock+market&apiKey={news_api_key}"
                 response = requests.get(url)
                 if response.status_code == 200:

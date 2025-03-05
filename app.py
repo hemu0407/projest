@@ -11,6 +11,37 @@ from sklearn.preprocessing import StandardScaler
 # Set Page Configuration
 st.set_page_config(page_title="Stock Market App", layout="wide")
 
+# Custom CSS for Sidebar Blocks
+st.markdown(
+    """
+    <style>
+    .sidebar .block-container {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+    .sidebar .stButton>button {
+        width: 100%;
+        padding: 10px;
+        border-radius: 5px;
+        background-color: #f0f2f6;
+        border: 1px solid #ccc;
+        text-align: left;
+        font-size: 16px;
+        color: #333;
+    }
+    .sidebar .stButton>button:hover {
+        background-color: #e2e6ea;
+        border-color: #bbb;
+    }
+    .sidebar .stMarkdown {
+        margin-bottom: 0;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
+
 # API Key
 API_KEY = "B1N3W1H7PD3F8ZRG"
 
@@ -42,9 +73,19 @@ if "alerts" not in st.session_state:
 st.sidebar.title("📌 Navigation")
 st.sidebar.markdown("---")  # Adds a horizontal line for separation
 
-# Sidebar Sections
-st.sidebar.markdown("### 📊 Dashboard")
-page = st.sidebar.radio("", ["🏠 Home", "📊 Stock Market Dashboard", "🚨 Price Alert", "🔄 Stock Comparison"], index=1)
+# Sidebar Sections as Blocks
+if st.sidebar.button("🏠 Home"):
+    st.session_state.page = "🏠 Home"
+if st.sidebar.button("📊 Stock Market Dashboard"):
+    st.session_state.page = "📊 Stock Market Dashboard"
+if st.sidebar.button("🚨 Price Alert"):
+    st.session_state.page = "🚨 Price Alert"
+if st.sidebar.button("🔄 Stock Comparison"):
+    st.session_state.page = "🔄 Stock Comparison"
+
+# Set default page if not set
+if "page" not in st.session_state:
+    st.session_state.page = "📊 Stock Market Dashboard"
 
 # Additional Information Section
 st.sidebar.markdown("---")
@@ -80,11 +121,11 @@ Version: 1.0.0
 """)
 
 # Home Page
-if page == "🏠 Home":
+if st.session_state.page == "🏠 Home":
     st.image("https://source.unsplash.com/featured/?stocks,market", use_column_width=True)
 
 # Stock Market Dashboard
-elif page == "📊 Stock Market Dashboard":
+elif st.session_state.page == "📊 Stock Market Dashboard":
     st.title("📊 Stock Market Dashboard")
     
     selected_company = st.selectbox("📌 Select a Company", list(companies.keys()))
@@ -170,7 +211,7 @@ elif page == "📊 Stock Market Dashboard":
                 st.warning("💡 Recommendation: Do not invest at this time")
 
 # Price Alert Section
-elif page == "🚨 Price Alert":
+elif st.session_state.page == "🚨 Price Alert":
     st.title("🚨 Price Alert")
 
     if "alerts" not in st.session_state:
@@ -222,7 +263,7 @@ elif page == "🚨 Price Alert":
                 st.warning(f"⚠ Couldn't fetch data for {alert['company']}")
 
 # Stock Comparison Section (Updated)
-elif page == "🔄 Stock Comparison":
+elif st.session_state.page == "🔄 Stock Comparison":
     st.title("🔄 Advanced Stock Comparison")
 
     company_list = list(companies.keys())

@@ -219,8 +219,7 @@ def fetch_news():
         st.error(f"Error fetching news: {str(e)}")
         return []
 
-# Update the Home Page section
-if st.session_state.page == "🏠 Home":
+# Update the Home Page sectio
     # Main Header Section
     st.markdown(
         """

@@ -9,7 +9,7 @@ from datetime import datetime, timedelta
 st.set_page_config(page_title="Stock Market App", layout="wide")
 
 # API Key
-API_KEY = "B1N3W1H7PD3F8ZRG"
+API_KEY = "MVVQ3GM2LROFV9JI"
 
 # Stock Symbols
 companies = {
@@ -205,7 +205,7 @@ elif page == "🚨 Price Alert":
             else:
                 st.warning(f"⚠ Couldn't fetch data for {alert['company']}")
 
-# Stock Comparison Section (Updated)
+# Stock Comparison Section (Updated with Actionable Insights)
 elif page == "🔄 Stock Comparison":
     st.title("🔄 Advanced Stock Comparison")
 

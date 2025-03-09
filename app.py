@@ -32,38 +32,102 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-# User Database (Replace with a real database in production)
-USERS = {
-    "user1": {"password": "pass1", "name": "User1"},
-    "user2": {"password": "pass2", "name": "User2"}
-}
+import sqlite3
+import streamlit as st
+
+# SQLite Database Configuration
+DATABASE_FILE = "users.db"
+
+# Function to connect to SQLite database
+def connect_db():
+    return sqlite3.connect(DATABASE_FILE)
+
+# Function to initialize the database
+def init_db():
+    conn = connect_db()
+    cursor = conn.cursor()
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS users (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            username TEXT NOT NULL UNIQUE,
+            password TEXT NOT NULL,
+            name TEXT NOT NULL
+        )
+    """)
+    conn.commit()
+    conn.close()
+
+# Initialize the database
+init_db()
 
 # Authentication Functions
 def authenticate(username, password):
     """Check if the username and password are valid."""
-    if username in USERS and USERS[username]['password'] == password:
+    conn = connect_db()
+    cursor = conn.cursor()
+    query = "SELECT name FROM users WHERE username = ? AND password = ?"
+    cursor.execute(query, (username, password))
+    result = cursor.fetchone()
+    cursor.close()
+    conn.close()
+    if result:
+        return True, result[0]  # Return True and the user's name
+    return False, None
+
+def register_user(username, password, name):
+    """Register a new user."""
+    conn = connect_db()
+    cursor = conn.cursor()
+    try:
+        query = "INSERT INTO users (username, password, name) VALUES (?, ?, ?)"
+        cursor.execute(query, (username, password, name))
+        conn.commit()
+        cursor.close()
+        conn.close()
         return True
-    return False
+    except sqlite3.IntegrityError:
+        # Handle duplicate username
+        cursor.close()
+        conn.close()
+        return False
 
 def login_page():
     """Display the login page and handle authentication."""
     st.markdown("<div class='login-container'>", unsafe_allow_html=True)
     st.markdown("<h2 class='login-title'>🔒 Stock App Login</h2>", unsafe_allow_html=True)
     
-    username = st.text_input("Username")
-    password = st.text_input("Password", type="password")
+    # Tabs for Login and Register
+    tab1, tab2 = st.tabs(["Login", "Register"])
     
-    if st.button("Login"):
-        if authenticate(username, password):
-            st.session_state.authenticated = True
-            st.session_state.current_user = USERS[username]['name']
-            st.success("Login successful! Redirecting...")
-        else:
-            st.error("Invalid username/password")
+    with tab1:
+        username = st.text_input("Username", key="login_username")
+        password = st.text_input("Password", type="password", key="login_password")
+        
+        if st.button("Login"):
+            auth_status, name = authenticate(username, password)
+            if auth_status:
+                st.session_state.authenticated = True
+                st.session_state.current_user = name
+                st.success("Login successful! Redirecting...")
+            else:
+                st.error("Invalid username/password")
+    
+    with tab2:
+        new_username = st.text_input("Choose a Username", key="reg_username")
+        new_password = st.text_input("Choose a Password", type="password", key="reg_password")
+        new_name = st.text_input("Your Full Name", key="reg_name")
+        
+        if st.button("Register"):
+            if new_username and new_password and new_name:
+                if register_user(new_username, new_password, new_name):
+                    st.success("Registration successful! Please login.")
+                else:
+                    st.error("Registration failed. Username might already exist.")
+            else:
+                st.error("Please fill in all fields.")
     
     st.markdown("</div>", unsafe_allow_html=True)
     st.stop()  # Stop execution to prevent access to the rest of the app
-
 # Check Authentication
 if "authenticated" not in st.session_state:
     st.session_state.authenticated = False
@@ -72,9 +136,7 @@ if "authenticated" not in st.session_state:
 if not st.session_state.authenticated:
     login_page()
 
-# =================================================================
-# REST OF YOUR ORIGINAL CODE STARTS HERE (Only for authenticated users)
-# =================================================================
+
 
 # Add logout button to sidebar
 # Modified logout button and welcome message
@@ -122,7 +184,7 @@ st.markdown(
 )
 
 # API Key and other original code continues...
-API_KEY = "JPNRH3CHRG55K7ON"
+API_KEY = "1AVIR0HECMGB4BWY"
 
 # Stock Symbols
 companies = {
@@ -145,9 +207,6 @@ def get_stock_data(symbol):
     return response.json()
 
 # Initialize session state
-if "alerts" not in st.session_state:
-    st.session_state.alerts = []
-
 # Sidebar Navigation
 st.sidebar.title("📌 Navigation")
 st.sidebar.markdown("---")  # Adds a horizontal line for separation
@@ -161,6 +220,9 @@ if st.sidebar.button("🚨 Price Alert"):
     st.session_state.page = "🚨 Price Alert"
 if st.sidebar.button("🔄 Stock Comparison"):
     st.session_state.page = "🔄 Stock Comparison"
+if st.sidebar.button("📊 Top Gainers & Losers"):  
+    st.session_state.page = "📊 Top Gainers & Losers"
+
 
 # Set default page if not set
 if "page" not in st.session_state:
@@ -420,28 +482,6 @@ if st.session_state.page == "🏠 Home":
             </div>
         </div>
         """, unsafe_allow_html=True)
-
-    # Add copyright footer here
-    st.markdown(
-        """
-        <style>
-        .footer {
-            text-align: center;
-            padding: 1.5rem;
-            color: #666;
-            font-size: 0.9rem;
-            margin-top: 2rem;
-            border-top: 1px solid #eee;
-        }
-        </style>
-        """,
-        unsafe_allow_html=True
-    )
-
-    st.markdown(
-        f'<div class="footer">© {datetime.now().year} Market Pulse. All rights reserved.</div>',
-        unsafe_allow_html=True
-    )
     
 # Stock Market Dashboard
 elif st.session_state.page == "📊 Stock Market Dashboard":
@@ -460,7 +500,7 @@ elif st.session_state.page == "📊 Stock Market Dashboard":
             st.session_state.stock_data = df
         else:
             st.warning(f"⚠ Could not fetch data for {selected_company}.")
-
+    
     if "stock_data" in st.session_state:
         df = st.session_state.stock_data
         current_price = df["Close"].iloc[-1]
@@ -529,6 +569,10 @@ elif st.session_state.page == "📊 Stock Market Dashboard":
                 st.error(f"📉 Loss: ${abs(profit_loss):.2f} ({abs(profit_loss_percentage):.2f}%)")
                 st.warning("💡 Recommendation: Do not invest at this time")
 
+
+
+
+# Price Alert Section
 # Price Alert Section
 elif st.session_state.page == "🚨 Price Alert":
     st.title("🚨 Price Alert")
@@ -540,153 +584,14 @@ elif st.session_state.page == "🚨 Price Alert":
     st.subheader("🔔 Set Price Alert")
     selected_company = st.selectbox("📌 Choose a Company", list(companies.keys()))
     alert_price = st.number_input("💰 Enter Alert Price", min_value=0.0, format="%.2f")
-    
+    user_email = st.text_input("📧 Enter your Email ID", placeholder="yourname@example.com")
+
     if st.button("✅ Set Alert"):
-        st.session_state.alerts.append({
-            "company": selected_company,
-            "symbol": companies[selected_company],
-            "alert_price": alert_price
-        })
-        st.success(f"🚀 Alert set for {selected_company} at ${alert_price:.2f}")
-
-    # Active Alerts
-    st.subheader("📋 Active Alerts")
-    if st.session_state.alerts:
-        for i, alert in enumerate(st.session_state.alerts):
-            col1, col2 = st.columns([4,1])
-            with col1:
-                st.write(f"{i + 1}. {alert['company']} - Alert at ${alert['alert_price']:.2f}")
-            with col2:
-                if st.button(f"❌ Clear {i+1}"):
-                    st.session_state.alerts.pop(i)
-                    st.experimental_rerun()
-    else:
-        st.info("No active alerts.")
-
-    # Check Alerts
-    st.subheader("🔍 Check Alerts")
-    if st.button("🔔 Check Alerts Now"):
-        for alert in st.session_state.alerts:
-            stock_data = get_stock_data(alert["symbol"])
-            if "Time Series (5min)" in stock_data:
-                df = pd.DataFrame.from_dict(stock_data["Time Series (5min)"], orient="index").astype(float)
-                if "Close" in df.columns:
-                    current_price = df["Close"].iloc[-1]
-                    if current_price >= alert["alert_price"]:
-                        st.success(f"🚨 {alert['company']} Alert Triggered! Current: ${current_price:.2f}")
-                    else:
-                        st.info(f"⏳ {alert['company']} at ${current_price:.2f} (Target: ${alert['alert_price']:.2f})")
-                else:
-                    st.warning(f"⚠ Missing data for {alert['company']}")
-            else:
-                st.warning(f"⚠ Couldn't fetch data for {alert['company']}")
-
-# Stock Comparison Section (Updated)
-elif st.session_state.page == "🔄 Stock Comparison":
-    st.title("🔄 Advanced Stock Comparison")
-
-    company_list = list(companies.keys())
-    
-    # Dynamic stock selection
-    stock1 = st.selectbox("📌 Select First Company", company_list, key="stock1")
-    stock2 = st.selectbox("📌 Select Second Company", 
-                         [c for c in company_list if c != stock1], 
-                         key="stock2")
-
-    if st.button("🔍 Compare Stocks"):
-        stock1_data = get_stock_data(companies[stock1])
-        stock2_data = get_stock_data(companies[stock2])
-
-        if "Time Series (5min)" in stock1_data and "Time Series (5min)" in stock2_data:
-            # Process data
-            df1 = pd.DataFrame(stock1_data["Time Series (5min)"]).T.astype(float)
-            df2 = pd.DataFrame(stock2_data["Time Series (5min)"]).T.astype(float)
-            df1.index = pd.to_datetime(df1.index)
-            df2.index = pd.to_datetime(df2.index)
-            
-            # Price Comparison
-            comparison_df = pd.DataFrame({
-                stock1: df1["4. close"],
-                stock2: df2["4. close"]
-            }).sort_index()
-
-            st.subheader("📊 Price Trend Comparison")
-            fig = px.line(comparison_df, template="plotly_dark", 
-                         title="Hourly Price Movement Comparison")
-            st.plotly_chart(fig)
-
-            # Advanced Analysis
-            st.subheader("📈 Actionable Insights")
-            
-            # Correlation Analysis with Strategy Implications
-            correlation = comparison_df[stock1].corr(comparison_df[stock2])
-            col1, col2 = st.columns(2)
-            with col1:
-                st.metric("Correlation Coefficient", f"{correlation:.2f}")
-            with col2:
-                if correlation > 0.8:
-                    st.success("Strong Positive Correlation")
-                    st.write("💡 Strategy: Consider pairs trading or sector-based investing")
-                elif correlation < -0.8:
-                    st.warning("Strong Negative Correlation")
-                    st.write("💡 Strategy: Potential hedging opportunity")
-                else:
-                    st.info("Weak Correlation")
-                    st.write("💡 Strategy: Good for portfolio diversification")
-
-            # Volatility Analysis with Risk Assessment
-            st.subheader("📉 Volatility Comparison")
-            vol1 = comparison_df[stock1].pct_change().std() * 100
-            vol2 = comparison_df[stock2].pct_change().std() * 100
-            vol_df = pd.DataFrame({
-                "Stock": [stock1, stock2],
-                "Volatility": [vol1, vol2]
+        if user_email:
+            st.session_state.alerts.append({
+                "company": selected_company,
+                "symbol": companies[selected_company],
+                "alert_price": alert_price,
+                "email": user_email
             })
-            fig_vol = px.bar(vol_df, x="Stock", y="Volatility", 
-                            color="Stock", template="plotly_dark",
-                            title="Price Volatility (Standard Deviation of Daily Returns)")
-            st.plotly_chart(fig_vol)
-
-            if vol1 > vol2:
-                st.warning(f"{stock1} is {vol1/vol2:.1f}x more volatile than {stock2}")
-                st.write("💡 Consider: Higher risk/reward potential in", stock1)
-            else:
-                st.info(f"{stock2} is {vol2/vol1:.1f}x more volatile than {stock1}")
-                st.write("💡 Consider:", stock2, "might offer better short-term trading opportunities")
-
-            # Momentum Analysis with Trend Insights
-            st.subheader("🚀 Momentum Analysis")
-            momentum1 = (comparison_df[stock1].iloc[-1] / comparison_df[stock1].iloc[0] - 1) * 100
-            momentum2 = (comparison_df[stock2].iloc[-1] / comparison_df[stock2].iloc[0] - 1) * 100
-            mom_df = pd.DataFrame({
-                "Stock": [stock1, stock2],
-                "Momentum": [momentum1, momentum2]
-            })
-            fig_momentum = px.bar(mom_df, x="Stock", y="Momentum", 
-                                 color="Stock", template="plotly_dark",
-                                 title="Percentage Change Over Period")
-            st.plotly_chart(fig_momentum)
-
-            if momentum1 > momentum2:
-                st.success(f"{stock1} shows stronger upward momentum")
-                st.write("💡 Consider: Potential buying opportunity in", stock1)
-            else:
-                st.warning(f"{stock2} demonstrates better recent performance")
-                st.write("💡 Consider: Investigate", stock2, "for potential investments")
-
-            # Final Recommendations
-            st.subheader("💡 Investment Recommendations")
-            if correlation > 0.7 and abs(momentum1 - momentum2) > 5:
-                st.success("Pairs Trading Opportunity")
-                st.write("- Buy the outperforming stock")
-                st.write("- Short the underperforming stock")
-            elif vol1 > 5 and vol2 > 5:
-                st.warning("High Volatility Alert")
-                st.write("- Consider options strategies")
-                st.write("- Implement stop-loss orders")
-            else:
-                st.info("Diversification Opportunity")
-                st.write("- Consider balanced portfolio allocation")
-
-        else:
-            st.warning("⚠ Failed to fetch comparison data")
+            st.success(f"🚀 Alert set for {selected_company} at

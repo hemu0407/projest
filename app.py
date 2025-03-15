@@ -594,4 +594,213 @@ elif st.session_state.page == "🚨 Price Alert":
                 "alert_price": alert_price,
                 "email": user_email
             })
-            st.success(f"🚀 Alert set for {selected_company} at
+            st.success(f"🚀 Alert set for {selected_company} at ${alert_price:.2f}. You will be notified at {user_email}.")
+        else:
+            st.error("❌ Please enter a valid Email ID.")
+
+    # Active Alerts
+    st.subheader("📋 Active Alerts")
+    if st.session_state.alerts:
+        for i, alert in enumerate(st.session_state.alerts):
+            col1, col2 = st.columns([4, 1])
+            with col1:
+                st.write(f"{i + 1}. {alert['company']} - Alert at ${alert['alert_price']:.2f} (Email: {alert['email']})")
+            with col2:
+                if st.button(f"❌ Clear {i+1}"):
+                    st.session_state.alerts.pop(i)
+                    st.experimental_rerun()
+    else:
+        st.info("No active alerts.")
+
+    # Check Alerts
+    st.subheader("🔍 Check Alerts")
+    if st.button("🔔 Check Alerts Now"):
+        for alert in st.session_state.alerts:
+            stock_data = get_stock_data(alert["symbol"])
+            if "Time Series (5min)" in stock_data:
+                df = pd.DataFrame.from_dict(stock_data["Time Series (5min)"], orient="index").astype(float)
+                if "Close" in df.columns:
+                    current_price = df["Close"].iloc[-1]
+                    if current_price >= alert["alert_price"]:
+                        st.success(f"🚨 {alert['company']} Alert Triggered! Current: ${current_price:.2f}")
+                        # Here, you can add an email notification system using SMTP or a third-party API.
+                    else:
+                        st.info(f"⏳ {alert['company']} at ${current_price:.2f} (Target: ${alert['alert_price']:.2f})")
+                else:
+                    st.warning(f"⚠ Missing data for {alert['company']}")
+            else:
+                st.warning(f"⚠ Couldn't fetch data for {alert['company']}")
+# Stock Comparison Section (Updated)
+elif st.session_state.page == "🔄 Stock Comparison":
+    st.title("🔄 Advanced Stock Comparison")
+
+    company_list = list(companies.keys())
+    
+    # Dynamic stock selection
+    stock1 = st.selectbox("📌 Select First Company", company_list, key="stock1")
+    stock2 = st.selectbox("📌 Select Second Company", 
+                         [c for c in company_list if c != stock1], 
+                         key="stock2")
+
+    if st.button("🔍 Compare Stocks"):
+        stock1_data = get_stock_data(companies[stock1])
+        stock2_data = get_stock_data(companies[stock2])
+
+        if "Time Series (5min)" in stock1_data and "Time Series (5min)" in stock2_data:
+            # Process data
+            df1 = pd.DataFrame(stock1_data["Time Series (5min)"]).T.astype(float)
+            df2 = pd.DataFrame(stock2_data["Time Series (5min)"]).T.astype(float)
+            df1.index = pd.to_datetime(df1.index)
+            df2.index = pd.to_datetime(df2.index)
+            
+            # Price Comparison
+            comparison_df = pd.DataFrame({
+                stock1: df1["4. close"],
+                stock2: df2["4. close"]
+            }).sort_index()
+
+            st.subheader("📊 Price Trend Comparison")
+            fig = px.line(comparison_df, template="plotly_dark", 
+                         title="Hourly Price Movement Comparison")
+            st.plotly_chart(fig)
+
+            # Advanced Analysis
+            st.subheader("📈 Actionable Insights")
+            
+            # Correlation Analysis with Strategy Implications
+            correlation = comparison_df[stock1].corr(comparison_df[stock2])
+            col1, col2 = st.columns(2)
+            with col1:
+                st.metric("Correlation Coefficient", f"{correlation:.2f}")
+            with col2:
+                if correlation > 0.8:
+                    st.success("Strong Positive Correlation")
+                    st.write("💡 Strategy: Consider pairs trading or sector-based investing")
+                elif correlation < -0.8:
+                    st.warning("Strong Negative Correlation")
+                    st.write("💡 Strategy: Potential hedging opportunity")
+                else:
+                    st.info("Weak Correlation")
+                    st.write("💡 Strategy: Good for portfolio diversification")
+
+            # Volatility Analysis with Risk Assessment
+            st.subheader("📉 Volatility Comparison")
+            vol1 = comparison_df[stock1].pct_change().std() * 100
+            vol2 = comparison_df[stock2].pct_change().std() * 100
+            vol_df = pd.DataFrame({
+                "Stock": [stock1, stock2],
+                "Volatility": [vol1, vol2]
+            })
+            fig_vol = px.bar(vol_df, x="Stock", y="Volatility", 
+                            color="Stock", template="plotly_dark",
+                            title="Price Volatility (Standard Deviation of Daily Returns)")
+            st.plotly_chart(fig_vol)
+
+            if vol1 > vol2:
+                st.warning(f"{stock1} is {vol1/vol2:.1f}x more volatile than {stock2}")
+                st.write("💡 Consider: Higher risk/reward potential in", stock1)
+            else:
+                st.info(f"{stock2} is {vol2/vol1:.1f}x more volatile than {stock1}")
+                st.write("💡 Consider:", stock2, "might offer better short-term trading opportunities")
+
+            # Momentum Analysis with Trend Insights
+            st.subheader("🚀 Momentum Analysis")
+            momentum1 = (comparison_df[stock1].iloc[-1] / comparison_df[stock1].iloc[0] - 1) * 100
+            momentum2 = (comparison_df[stock2].iloc[-1] / comparison_df[stock2].iloc[0] - 1) * 100
+            mom_df = pd.DataFrame({
+                "Stock": [stock1, stock2],
+                "Momentum": [momentum1, momentum2]
+            })
+            fig_momentum = px.bar(mom_df, x="Stock", y="Momentum", 
+                                 color="Stock", template="plotly_dark",
+                                 title="Percentage Change Over Period")
+            st.plotly_chart(fig_momentum)
+
+            if momentum1 > momentum2:
+                st.success(f"{stock1} shows stronger upward momentum")
+                st.write("💡 Consider: Potential buying opportunity in", stock1)
+            else:
+                st.warning(f"{stock2} demonstrates better recent performance")
+                st.write("💡 Consider: Investigate", stock2, "for potential investments")
+
+            # Final Recommendations
+            st.subheader("💡 Investment Recommendations")
+            if correlation > 0.7 and abs(momentum1 - momentum2) > 5:
+                st.success("Pairs Trading Opportunity")
+                st.write("- Buy the outperforming stock")
+                st.write("- Short the underperforming stock")
+            elif vol1 > 5 and vol2 > 5:
+                st.warning("High Volatility Alert")
+                st.write("- Consider options strategies")
+                st.write("- Implement stop-loss orders")
+            else:
+                st.info("Diversification Opportunity")
+                st.write("- Consider balanced portfolio allocation")
+
+        else:
+            st.warning("⚠ Failed to fetch comparison data")
+
+# Top Gainer & Loser Section
+elif st.session_state.page == "📊 Top Gainers & Losers":
+    st.title("📈 Top Gainer & Loser")
+
+    gainers = {}
+    losers = {}
+    for company, symbol in companies.items():
+        stock_data = get_stock_data(symbol)
+        
+        # Check if data is fetched successfully and contains the required key
+        if stock_data and "Time Series (5min)" in stock_data:
+            df = pd.DataFrame.from_dict(stock_data["Time Series (5min)"], orient="index", dtype=float)
+            df.index = pd.to_datetime(df.index)
+            df = df.sort_index()
+            df.columns = ["Open", "High", "Low", "Close", "Volume"]
+
+            open_price = df.iloc[0]["Open"]
+            close_price = df.iloc[-1]["Close"]
+            change = close_price - open_price
+
+            if change > 0:
+                gainers[company] = change
+            else:
+                losers[company] = change
+        else:
+            st.warning(f"⚠ Could not fetch data for {company} ({symbol}).")
+
+    # Display Top Gainer
+    if gainers:
+        top_gainer = max(gainers, key=gainers.get)
+        st.subheader(f"📈 Top Gainer: {top_gainer}")
+        symbol = companies[top_gainer]
+        stock_data = get_stock_data(symbol)
+        
+        if stock_data and "Time Series (5min)" in stock_data:
+            df = pd.DataFrame.from_dict(stock_data["Time Series (5min)"], orient="index", dtype=float)
+            df.index = pd.to_datetime(df.index)
+            df = df.sort_index()
+            df.columns = ["Open", "High", "Low", "Close", "Volume"]
+
+            st.metric(label="📈 Open Price", value=f"${df.iloc[0]['Open']:.2f}")
+            fig_gainer = px.line(df, x=df.index, y="Close", title=f"{top_gainer} Stock Price")
+            st.plotly_chart(fig_gainer)
+        else:
+            st.warning(f"⚠ Could not fetch data for {top_gainer} ({symbol}).")
+
+    # Display Top Loser
+    if losers:
+        top_loser = min(losers, key=losers.get)
+        st.subheader(f"📉 Top Loser: {top_loser}")
+        symbol = companies[top_loser]
+        stock_data = get_stock_data(symbol)
+        
+        if stock_data and "Time Series (5min)" in stock_data:
+            df = pd.DataFrame.from_dict(stock_data["Time Series (5min)"], orient="index", dtype=float)
+            df.index = pd.to_datetime(df.index)
+            df = df.sort_index()
+            df.columns = ["Open", "High", "Low", "Close", "Volume"]
+
+            st.metric(label="📉 Open Price", value=f"${df.iloc[0]['Open']:.2f}")
+            fig_loser = px.line(df, x=df.index, y="Close", title=f"{top_loser} Stock Price")
+            st.plotly_chart(fig_loser)
+        else:
+            st.warning(f"⚠ Could not fetch data for {top_loser} ({symbol}).")
